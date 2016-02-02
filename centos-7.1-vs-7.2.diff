@@ -1,0 +1,5596 @@
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/admin/sudo.if centos-7.2.1511/usr/share/selinux/devel/include/admin/sudo.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/admin/sudo.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/admin/sudo.if	2015-11-20 17:07:58.000000000 +0100
+@@ -126,3 +126,22 @@
+ 
+ 	can_exec($1, sudo_exec_t)
+ ')
++
++######################################
++## <summary>
++##  Allow to manage sudo database in called domain.
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed access.
++##  </summary>
++## </param>
++#
++interface(`sudo_manage_db',`
++    gen_require(`
++        type sudo_db_t;
++    ')
++    
++    manage_dirs_pattern($1, sudo_db_t, sudo_db_t)
++    manage_files_pattern($1, sudo_db_t, sudo_db_t)
++')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/apps/seunshare.if centos-7.2.1511/usr/share/selinux/devel/include/apps/seunshare.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/apps/seunshare.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/apps/seunshare.if	2015-11-20 17:07:58.000000000 +0100
+@@ -85,6 +85,7 @@
+ 	mls_process_set_level($1_seunshare_t)
+ 
+ 	domtrans_pattern($3, seunshare_exec_t, $1_seunshare_t)
++	allow $1_seunshare_t $3:unix_stream_socket getattr;
+ 
+ 	# part of sandboxX.pp
+ 	optional_policy(`
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/abrt.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/abrt.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/abrt.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/abrt.if	2015-11-20 17:07:58.000000000 +0100
+@@ -43,6 +43,25 @@
+ 
+ ######################################
+ ## <summary>
++##	Execute abrt_dump_oops in the abrt_dump_oops_t domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++#
++interface(`abrt_dump_oops_domtrans',`
++	gen_require(`
++		type abrt_dump_oops_t, abrt_dump_oops_exec_t;
++	')
++
++	corecmd_search_bin($1)
++	domtrans_pattern($1, abrt_dump_oops_exec_t, abrt_dump_oops_t)
++')
++
++######################################
++## <summary>
+ ##	Execute abrt in the caller domain.
+ ## </summary>
+ ## <param name="domain">
+@@ -571,7 +590,7 @@
+ 		type abrt_var_run_t;
+ 	')
+ 
+-	files_tmp_filetrans($1, abrt_tmp_t, dir, "abrt")
++	files_tmp_filetrans($1, abrt_var_cache_t, dir, "abrt")
+ 	files_etc_filetrans($1, abrt_etc_t, dir, "abrt")
+ 	files_var_filetrans($1, abrt_var_cache_t, dir, "abrt")
+ 	files_var_filetrans($1, abrt_var_cache_t, dir, "abrt-dix")
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/apache.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/apache.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/apache.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/apache.if	2015-11-20 17:07:58.000000000 +0100
+@@ -1330,6 +1330,26 @@
+ ########################################
+ ## <summary>
+ ##	Allow the specified domain to read
++##	apache pid files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`apache_read_pid_files',`
++	gen_require(`
++		type httpd_var_run_t;
++	')
++
++	files_search_tmp($1)
++	read_files_pattern($1, httpd_var_run_t, httpd_var_run_t)
++')
++
++########################################
++## <summary>
++##	Allow the specified domain to read
+ ##	apache tmp files.
+ ## </summary>
+ ## <param name="domain">
+@@ -1638,3 +1658,4 @@
+ 	filetrans_pattern($1, httpd_user_content_t, httpd_user_content_ra_t, dir, "logs")
+ 	filetrans_pattern($1, { httpd_user_content_t httpd_user_script_exec_t }, httpd_user_htaccess_t, file, ".htaccess")
+ ')
++
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/bluetooth.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/bluetooth.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/bluetooth.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/bluetooth.if	2015-11-20 17:07:58.000000000 +0100
+@@ -70,11 +70,13 @@
+ interface(`bluetooth_stream_connect',`
+ 	gen_require(`
+ 		type bluetooth_t, bluetooth_var_run_t;
++		type bluetooth_tmp_t;
+ 	')
+ 
+ 	files_search_pids($1)
+ 	allow $1 bluetooth_t:socket rw_socket_perms;
+ 	stream_connect_pattern($1, bluetooth_var_run_t, bluetooth_var_run_t, bluetooth_t)
++	stream_connect_pattern($1, bluetooth_tmp_t, bluetooth_tmp_t, bluetooth_t)
+ ')
+ 
+ ########################################
+Only in centos-7.2.1511/usr/share/selinux/devel/include/contrib: cgdcbxd.if
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/chronyd.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/chronyd.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/chronyd.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/chronyd.if	2015-11-20 17:07:58.000000000 +0100
+@@ -57,6 +57,24 @@
+ 	can_exec($1, chronyd_exec_t)
+ ')
+ 
++########################################
++## <summary>
++##	Send generic signals to chronyd.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`chronyd_signal',`
++	gen_require(`
++		type chronyd_t;
++	')
++
++	allow $1 chronyd_t:process signal;
++')
++
+ #####################################
+ ## <summary>
+ ##	Read chronyd log files.
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/cockpit.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/cockpit.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/cockpit.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/cockpit.if	2015-11-20 17:07:58.000000000 +0100
+@@ -150,11 +150,6 @@
+ ##	Domain allowed access.
+ ##	</summary>
+ ## </param>
+-## <param name="role">
+-##	<summary>
+-##	Role allowed access.
+-##	</summary>
+-## </param>
+ ## <rolecap/>
+ #
+ interface(`cockpit_admin',`
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/ctdb.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/ctdb.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/ctdb.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/ctdb.if	2015-11-20 17:07:58.000000000 +0100
+@@ -38,6 +38,23 @@
+ 	init_labeled_script_domtrans($1, ctdbd_initrc_exec_t)
+ ')
+ 
++#######################################
++## <summary>
++##  Allow domain to signal ctdbd.
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed access.
++##  </summary>
++## </param>
++#
++interface(`ctdbd_signal',`
++    gen_require(`
++        type ctdbd_t;
++    ')
++        allow $1 ctdbd_t:process signal;
++')
++
+ ########################################
+ ## <summary>
+ ##	Read ctdbd's log files.
+@@ -156,25 +173,6 @@
+ ')
+ 
+ ########################################
+-## <summary>
+-##	Manage ctdbd lib files.
+-## </summary>
+-## <param name="domain">
+-##	<summary>
+-##	Domain allowed access.
+-##	</summary>
+-## </param>
+-#
+-interface(`ctdbd_manage_var_files',`
+-	gen_require(`
+-		type ctdbd_var_t;
+-	')
+-
+-	files_search_var_lib($1)
+-    manage_files_pattern($1, ctdbd_var_t, ctdbd_var_t)
+-')
+-
+-########################################
+ ## <summary>
+ ##	Manage ctdbd lib directories.
+ ## </summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/dirsrv-admin.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/dirsrv-admin.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/dirsrv-admin.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/dirsrv-admin.if	2015-11-20 17:07:58.000000000 +0100
+@@ -112,6 +112,30 @@
+ 	manage_dirs_pattern($1, dirsrvadmin_tmp_t, dirsrvadmin_tmp_t)
+ ')
+ 
++########################################
++## <summary>
++##	Execute dirsrv-admin server in the dirsrv-admin domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++#
++interface(`dirsrvadmin_systemctl',`
++	gen_require(`
++		type dirsrvadmin_t;
++		type dirsrvadmin_unit_file_t;
++	')
++
++	systemd_exec_systemctl($1)
++	init_reload_services($1)
++	allow $1 dirsrvadmin_unit_file_t:file read_file_perms;
++	allow $1 dirsrvadmin_unit_file_t:service manage_service_perms;
++
++	ps_process_pattern($1, dirsrvadmin_t)
++')
++
+ #######################################
+ ## <summary>
+ ##  Execute admin cgi programs in caller domain.
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/dnssec.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/dnssec.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/dnssec.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/dnssec.if	2015-11-20 17:07:58.000000000 +0100
+@@ -62,6 +62,25 @@
+ 
+ ########################################
+ ## <summary>
++##	Send signull to dnssec_trigger.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++#
++interface(`dnssec_trigger_signull',`
++	gen_require(`
++		type dnssec_trigger_t;
++	')
++
++    allow $1 dnssec_trigger_t:process signull;
++')
++
++########################################
++## <summary>
+ ##	All of the rules required to administrate
+ ##	an dnssec_trigger environment
+ ## </summary>
+Only in centos-7.1.1503/usr/share/selinux/devel/include/contrib: docker.if
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/etcd.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/etcd.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/etcd.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/etcd.if	2015-11-20 17:07:58.000000000 +0100
+@@ -131,11 +131,6 @@
+ ##	Domain allowed access.
+ ##	</summary>
+ ## </param>
+-## <param name="role">
+-##	<summary>
+-##	Role allowed access.
+-##	</summary>
+-## </param>
+ ## <rolecap/>
+ #
+ interface(`etcd_admin',`
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/gear.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/gear.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/gear.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/gear.if	2015-11-20 17:07:58.000000000 +0100
+@@ -267,7 +267,6 @@
+ 		type gear_t;
+ 		type gear_var_lib_t, gear_var_run_t;
+ 		type gear_unit_file_t;
+-		type gear_lock_t;
+ 		type gear_log_t;
+ 	')
+ 
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/geoclue.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/geoclue.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/geoclue.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/geoclue.if	2015-11-20 17:07:58.000000000 +0100
+@@ -128,11 +128,6 @@
+ ##	Domain allowed access.
+ ##	</summary>
+ ## </param>
+-## <param name="role">
+-##	<summary>
+-##	Role allowed access.
+-##	</summary>
+-## </param>
+ ## <rolecap/>
+ #
+ interface(`geoclue_admin',`
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/glusterd.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/glusterd.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/glusterd.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/glusterd.if	2015-11-20 17:07:58.000000000 +0100
+@@ -117,7 +117,84 @@
+ 	manage_lnk_files_pattern($1, glusterd_log_t, glusterd_log_t)
+ ')
+ 
+-########################################
++######################################
++## <summary>
++##  Allow the specified domain to execute gluster's lib files.
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed access.
++##  </summary>
++## </param>
++#
++interface(`gluster_execute_lib',`
++    gen_require(`
++        type glusterd_var_lib_t;
++    ')
++
++    files_list_var_lib($1)
++    allow $1 glusterd_var_lib_t:dir search_dir_perms;
++    can_exec($1, glusterd_var_lib_t)
++')
++
++######################################
++## <summary>
++##  Read glusterd's config files.
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed access.
++##  </summary>
++## </param>
++#
++interface(`glusterd_read_conf',`
++       gen_require(`
++               type glusterd_conf_t;
++       ')
++
++    files_search_etc($1)
++    read_files_pattern($1, glusterd_conf_t, glusterd_conf_t)
++')
++
++######################################
++## <summary>
++##  Read and write /var/lib/glusterd files.
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed access.
++##  </summary>
++## </param>
++#
++interface(`glusterd_rw_lib',`
++       gen_require(`
++               type glusterd_var_lib_t;
++       ')
++
++    files_search_var_lib($1)
++    rw_files_pattern($1, glusterd_var_lib_t, glusterd_var_lib_t)
++')
++
++######################################
++## <summary>
++## Read and write /var/lib/glusterd files.
++## </summary>
++## <param name="domain">
++##     <summary>
++##     Domain allowed access.
++##     </summary>
++## </param>
++#
++interface(`glusterd_manage_lib_files',`
++       gen_require(`
++               type glusterd_var_lib_t;
++       ')
++
++    files_search_var_lib($1)
++    manage_files_pattern($1, glusterd_var_lib_t, glusterd_var_lib_t)
++')
++
++######################################
+ ## <summary>
+ ##	All of the rules required to administrate
+ ##	an glusterd environment
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/hddtemp.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/hddtemp.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/hddtemp.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/hddtemp.if	2015-11-20 17:07:58.000000000 +0100
+@@ -19,6 +19,32 @@
+ 	domtrans_pattern($1, hddtemp_exec_t, hddtemp_t)
+ ')
+ 
++########################################
++## <summary>
++##	Execute hddtemp in the hddtemp domain, and
++##	allow the specified role the hddtemp domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++## <param name="role">
++##	<summary>
++##	Role allowed access.
++##	</summary>
++## </param>
++#
++interface(`hddtemp_run',`
++	gen_require(`
++		type hddtemp_t;
++		attribute_role hddtemp_roles;
++	')
++
++    hddtemp_domtrans($1)
++    roleattribute $2 hddtemp_roles;
++')
++
+ ######################################
+ ## <summary>
+ ##	Execute hddtemp in the caller domain.
+Only in centos-7.2.1511/usr/share/selinux/devel/include/contrib: hostapd.if
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/ipa.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/ipa.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/ipa.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/ipa.if	2015-11-20 17:07:58.000000000 +0100
+@@ -38,6 +38,49 @@
+ 
+ ########################################
+ ## <summary>
++##	Execute ipa-helper in the ipa_helper domain.
++## </summary>
++## <param name="domain">
++## <summary>
++##	Domain allowed to transition.
++## </summary>
++## </param>
++#
++interface(`ipa_domtrans_helper',`
++	gen_require(`
++		type ipa_helper_t, ipa_helper_exec_t;
++	')
++
++	domtrans_pattern($1, ipa_helper_exec_t, ipa_helper_t)
++')
++
++########################################
++## <summary>
++##	Execute ipa-helper in the ipa_helper domain.
++## </summary>
++## <param name="domain">
++## <summary>
++##	Domain allowed to transition.
++## </summary>
++## </param>
++## <param name="role">
++##	<summary>
++##	Role allowed access.
++##	</summary>
++## </param>
++#
++interface(`ipa_run_helper',`
++	gen_require(`
++		type ipa_helper_t;
++        attribute_role ipa_helper_roles;
++	')
++
++    ipa_domtrans_helper($1)
++    roleattribute $2 ipa_helper_roles;
++')
++
++########################################
++## <summary>
+ ##	Allow domain to manage ipa lib files/dirs.
+ ## </summary>
+ ## <param name="domain">
+@@ -92,3 +135,21 @@
+     list_dirs_pattern($1, ipa_var_lib_t, ipa_var_lib_t)
+ ')
+ 
++########################################
++## <summary>
++##	Allow domain to manage ipa run files/dirs.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`ipa_manage_pid_files',`
++	gen_require(`
++		type ipa_var_run_t;
++	')
++    manage_files_pattern($1, ipa_var_run_t, ipa_var_run_t)
++    manage_dirs_pattern($1, ipa_var_run_t, ipa_var_run_t)
++')
++
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/iscsi.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/iscsi.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/iscsi.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/iscsi.if	2015-11-20 17:07:58.000000000 +0100
+@@ -21,6 +21,31 @@
+ 
+ ########################################
+ ## <summary>
++##	Execute iscsid programs in the iscsid domain.
++## </summary>
++## <param name="domain">
++## <summary>
++##	Domain allowed to transition.
++## </summary>
++## </param>
++## <param name="role">
++##  <summary>
++##  The role to allow the iscsid domain.
++##  </summary>
++## </param>
++## <rolecap/>
++#
++interface(`iscsid_run',`
++	gen_require(`
++		attribute_role iscsid_roles;
++	')
++
++    iscsid_domtrans($1)
++    roleattribute $2 iscsid_roles;
++')
++
++########################################
++## <summary>
+ ##	Create, read, write, and delete
+ ##	iscsid lock files.
+ ## </summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/jabber.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/jabber.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/jabber.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/jabber.if	2015-11-20 17:07:58.000000000 +0100
+@@ -146,6 +146,7 @@
+ 	gen_require(`
+ 		type jabberd_t, jabberd_var_lib_t;
+ 		type jabberd_initrc_exec_t, jabberd_router_t;
++        type jabberd_lock_t;
+ 	')
+ 
+ 	allow $1 jabberd_t:process signal_perms;
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/keepalived.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/keepalived.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/keepalived.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/keepalived.if	2015-11-20 17:07:58.000000000 +0100
+@@ -55,11 +55,6 @@
+ ##	Domain allowed access.
+ ##	</summary>
+ ## </param>
+-## <param name="role">
+-##	<summary>
+-##	Role allowed access.
+-##	</summary>
+-## </param>
+ ## <rolecap/>
+ #
+ interface(`keepalived_admin',`
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/kerberos.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/kerberos.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/kerberos.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/kerberos.if	2015-11-20 17:07:58.000000000 +0100
+@@ -469,6 +469,28 @@
+ 
+ ########################################
+ ## <summary>
++##	Manage the kerberos kdc /var/lib files
++##  and directories.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <rolecap/>
++#
++interface(`kerberos_manage_kdc_var_lib',`
++	gen_require(`
++		type krb5kdc_var_lib_t;
++	')
++
++	files_search_etc($1)
++	manage_files_pattern($1, krb5kdc_var_lib_t, krb5kdc_var_lib_t)
++    manage_dirs_pattern($1, krb5kdc_var_lib_t, krb5kdc_var_lib_t)
++')
++
++########################################
++## <summary>
+ ##	create kerberos content in the  in the /root directory
+ ##	with an correct label.
+ ## </summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/mozilla.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/mozilla.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/mozilla.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/mozilla.if	2015-11-20 17:07:58.000000000 +0100
+@@ -254,6 +254,7 @@
+ 	allow mozilla_plugin_t $1:sem create_sem_perms;
+ 	allow $1 mozilla_plugin_t:sem rw_sem_perms;
+ 	allow $1 mozilla_plugin_t:shm rw_shm_perms;
++	allow $1 mozilla_plugin_t:fifo_file rw_fifo_file_perms;
+ 
+ 	ps_process_pattern($1, mozilla_plugin_t)
+ 	ps_process_pattern(mozilla_plugin_t, $1)
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/mta.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/mta.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/mta.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/mta.if	2015-11-20 17:07:58.000000000 +0100
+@@ -598,9 +598,7 @@
+ 	files_search_etc($1)
+ 	manage_files_pattern($1, etc_aliases_t, etc_aliases_t)
+ 	manage_lnk_files_pattern($1, etc_aliases_t, etc_aliases_t)
+-	mta_etc_filetrans_aliases($1, "aliases")
+-	mta_etc_filetrans_aliases($1, "aliases.db")
+-	mta_etc_filetrans_aliases($1, "aliasesdb-stamp")
++	mta_filetrans_named_content($1)
+ ')
+ 
+ ########################################
+@@ -1263,6 +1261,10 @@
+ 	mta_etc_filetrans_aliases($1, "aliases")
+ 	mta_etc_filetrans_aliases($1, "aliases.db")
+ 	mta_etc_filetrans_aliases($1, "aliasesdb-stamp")
++	mta_etc_filetrans_aliases($1, "__db.aliases.db")
++    mta_etc_filetrans_aliases($1, "virtusertable.db")
++    mta_etc_filetrans_aliases($1, "access.db")
++    mta_etc_filetrans_aliases($1, "domaintable.db")
+ 	mta_filetrans_home_content($1)
+ 	mta_filetrans_admin_home_content($1)
+ ')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/munin.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/munin.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/munin.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/munin.if	2015-11-20 17:07:58.000000000 +0100
+@@ -112,6 +112,25 @@
+ 
+ #######################################
+ ## <summary>
++##	Manage munin library files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`munin_manage_var_lib_files',`
++	gen_require(`
++		type munin_var_lib_t;
++	')
++
++	files_search_var_lib($1)	
++	manage_files_pattern($1, munin_var_lib_t, munin_var_lib_t)
++')
++
++#######################################
++## <summary>
+ ##	Append munin library files.
+ ## </summary>
+ ## <param name="domain">
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/nagios.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/nagios.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/nagios.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/nagios.if	2015-11-20 17:07:58.000000000 +0100
+@@ -34,6 +34,26 @@
+ 
+ ########################################
+ ## <summary>
++## Execute the nagios unconfined plugins with
++## a domain transition.
++## </summary>
++## <param name="domain">
++## <summary>
++## Domain allowed access.
++## </summary>
++## </param>
++#
++interface(`nagios_domtrans_unconfined_plugins',`
++   gen_require(`
++        type nagios_unconfined_plugin_t;
++        type nagios_unconfined_plugin_exec_t;
++   ')
++
++    domtrans_pattern($1, nagios_unconfined_plugin_exec_t, nagios_unconfined_plugin_t)
++')
++
++########################################
++## <summary>
+ ##	Do not audit attempts to read or write nagios
+ ##	unnamed pipes.
+ ## </summary>
+@@ -72,6 +92,25 @@
+ 	allow $1 nagios_etc_t:file read_file_perms;
+ 	files_search_etc($1)
+ ')
++######################################
++## <summary>
++##	Read nagios lib files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`nagios_read_lib',`
++	gen_require(`
++		type nagios_var_lib_t;
++	')
++
++	files_search_var($1)
++    list_dirs_pattern($1, nagios_var_lib_t, nagios_var_lib_t)
++	read_files_pattern($1, nagios_var_lib_t, nagios_var_lib_t)
++')
+ 
+ ######################################
+ ## <summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/networkmanager.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/networkmanager.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/networkmanager.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/networkmanager.if	2015-11-20 17:07:58.000000000 +0100
+@@ -335,6 +335,40 @@
+ 	manage_sock_files_pattern($1, NetworkManager_var_run_t, NetworkManager_var_run_t)
+ ')
+ 
++########################################
++## <summary>
++##	Create objects in /etc with a private
++##	type using a type_transition.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <param name="file_type">
++##	<summary>
++##	Private file type.
++##	</summary>
++## </param>
++## <param name="class">
++##	<summary>
++##	Object classes to be created.
++##	</summary>
++## </param>
++## <param name="name" optional="true">
++##	<summary>
++##	The name of the object being created.
++##	</summary>
++## </param>
++#
++interface(`networkmanager_pid_filetrans',`
++	gen_require(`
++		type NetworkManager_var_run_t;
++	')
++
++	filetrans_pattern($1, NetworkManager_var_run_t, $2, $3, $4)
++')
++
+ ####################################
+ ## <summary>
+ ##  Connect to networkmanager over
+@@ -481,6 +515,63 @@
+ 
+ ########################################
+ ## <summary>
++##	Send sigchld to networkmanager.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++#
++interface(`networkmanager_sigchld',`
++	gen_require(`
++		type NetworkManager_t;
++	')
++
++    allow $1 NetworkManager_t:process sigchld;
++')
++
++########################################
++## <summary>
++##	Send signull to networkmanager.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++#
++interface(`networkmanager_signull',`
++	gen_require(`
++		type NetworkManager_t;
++	')
++
++    allow $1 NetworkManager_t:process signull;
++')
++
++########################################
++## <summary>
++##	Send sigkill to networkmanager.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++#
++interface(`networkmanager_sigkill',`
++	gen_require(`
++		type NetworkManager_t;
++	')
++
++    allow $1 NetworkManager_t:process sigkill;
++')
++
++########################################
++## <summary>
+ ##	Transition to networkmanager named content
+ ## </summary>
+ ## <param name="domain">
+@@ -495,16 +586,16 @@
+ 		type NetworkManager_var_lib_t;
+ 	')
+ 
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth0.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth1.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth2.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth3.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth4.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth5.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth6.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth7.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth8.conf")
+-	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient.-eth9.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth0.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth1.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth2.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth3.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth4.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth5.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth6.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth7.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth8.conf")
++	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-eth9.conf")
+ 	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-em0.conf")
+ 	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-em1.conf")
+ 	files_pid_filetrans($1, NetworkManager_var_run_t, file, "nm-dhclient-em2.conf")
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/nova.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/nova.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/nova.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/nova.if	2015-11-20 17:07:58.000000000 +0100
+@@ -32,28 +32,16 @@
+ #
+ template(`nova_domain_template',`
+ 	gen_require(`
+-		attribute nova_domain;
+-	')
+-
+-	type nova_$1_t, nova_domain;
+-	type nova_$1_exec_t;
+-	init_daemon_domain(nova_$1_t, nova_$1_exec_t)
+-
+-	type nova_$1_unit_file_t;
+-	systemd_unit_file(nova_$1_unit_file_t)
++        type nova_t;
++        type nova_exec_t;
++        type nova_unit_file_t;
++        type nova_tmp_t;
+ 
+-	type nova_$1_tmp_t;
+-	files_tmp_file(nova_$1_tmp_t)
+-
+-	manage_dirs_pattern(nova_$1_t, nova_$1_tmp_t, nova_$1_tmp_t)
+-	manage_files_pattern(nova_$1_t, nova_$1_tmp_t, nova_$1_tmp_t)
+-	manage_lnk_files_pattern(nova_$1_t, nova_$1_tmp_t, nova_$1_tmp_t)
+-	files_tmp_filetrans(nova_$1_t, nova_$1_tmp_t, { lnk_file file dir })
+-	fs_tmpfs_filetrans(nova_$1_t, nova_$1_tmp_t, { lnk_file file dir })
+-	can_exec(nova_$1_t, nova_$1_tmp_t)
+-
+-	kernel_read_system_state(nova_$1_t)
++	')
+ 
+-    logging_send_syslog_msg(nova_$1_t)
++    typealias nova_t alias nova_$1_t;
++    typealias nova_exec_t alias nova_$1_exec_t;
++    typealias nova_unit_file_t alias nova_$1_unit_file_t;
++    typealias nova_tmp_t alias nova_$1_tmp_t;
+ 
+ ')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/nsplugin.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/nsplugin.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/nsplugin.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/nsplugin.if	2015-11-20 17:07:58.000000000 +0100
+@@ -105,7 +105,7 @@
+ 	userdom_use_inherited_user_terminals(nsplugin_t)
+ 	userdom_use_inherited_user_terminals(nsplugin_config_t)
+ 	userdom_dontaudit_setattr_user_home_content_files(nsplugin_t)
+-	userdom_manage_tmpfs_role($1, nsplugin_t)
++	userdom_manage_tmp_role($1, nsplugin_t)
+ 
+ 	optional_policy(`
+ 		pulseaudio_role($1, nsplugin_t)
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/ntp.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/ntp.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/ntp.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/ntp.if	2015-11-20 17:07:58.000000000 +0100
+@@ -162,6 +162,24 @@
+ 
+ ########################################
+ ## <summary>
++##     Send a generic signal to ntpd
++## </summary>
++## <param name="domain">
++##     <summary>
++##     Domain allowed access.
++##     </summary>
++## </param>
++#
++interface(`ntp_signal',`
++    gen_require(`
++        type ntpd_t;
++    ')
++
++    allow $1 ntpd_t:process signal;
++')
++
++########################################
++## <summary>
+ ##	Read ntp drift files.
+ ## </summary>
+ ## <param name="domain">
+@@ -298,3 +316,26 @@
+ 	files_etc_filetrans($1, ntp_conf_t, dir, "ntp")
+     files_var_lib_filetrans($1, ntp_drift_t, file, "sntp-kod")
+ ')
++
++########################################
++## <summary>
++##      Create, read, write, and delete
++##      ntp log content.
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`ntp_manage_log',`
++         gen_require(`
++                 type ntpd_log_t;
++         ')
++ 
++        logging_search_logs($1)
++        manage_dirs_pattern($1, ntpd_log_t, ntpd_log_t)
++        manage_files_pattern($1, ntpd_log_t, ntpd_log_t)
++        manage_lnk_files_pattern($1, ntpd_log_t, ntpd_log_t)
++')
++
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/openshift.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/openshift.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/openshift.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/openshift.if	2015-11-20 17:07:58.000000000 +0100
+@@ -92,12 +92,7 @@
+ ## </param>
+ #
+ interface(`openshift_search_cache',`
+-	gen_require(`
+-		type openshift_cache_t;
+-	')
+-
+-	allow $1 openshift_cache_t:dir search_dir_perms;
+-	files_search_var($1)
++    refpolicywarn(`$0($*) has been deprecated.')
+ ')
+ 
+ ########################################
+@@ -111,12 +106,7 @@
+ ## </param>
+ #
+ interface(`openshift_read_cache_files',`
+-	gen_require(`
+-		type openshift_cache_t;
+-	')
+-
+-	files_search_var($1)
+-	read_files_pattern($1, openshift_cache_t, openshift_cache_t)
++    refpolicywarn(`$0($*) has been deprecated.')
+ ')
+ 
+ ########################################
+@@ -131,12 +121,7 @@
+ ## </param>
+ #
+ interface(`openshift_manage_cache_files',`
+-	gen_require(`
+-		type openshift_cache_t;
+-	')
+-
+-	files_search_var($1)
+-	manage_files_pattern($1, openshift_cache_t, openshift_cache_t)
++    refpolicywarn(`$0($*) has been deprecated.')
+ ')
+ 
+ ########################################
+@@ -151,12 +136,7 @@
+ ## </param>
+ #
+ interface(`openshift_manage_cache_dirs',`
+-	gen_require(`
+-		type openshift_cache_t;
+-	')
+-
+-	files_search_var($1)
+-	manage_dirs_pattern($1, openshift_cache_t, openshift_cache_t)
++    refpolicywarn(`$0($*) has been deprecated.')
+ ')
+ 
+ 
+@@ -457,7 +437,6 @@
+ 	gen_require(`
+ 		attribute openshift_domain;
+ 		type openshift_initrc_exec_t;
+-		type openshift_cache_t;
+ 		type openshift_log_t;
+ 		type openshift_var_lib_t;
+ 		type openshift_var_run_t;
+@@ -474,9 +453,6 @@
+ 	role_transition $2 openshift_initrc_exec_t system_r;
+ 	allow $2 system_r;
+ 
+-	files_search_var($1)
+-	admin_pattern($1, openshift_cache_t)
+-
+ 	logging_search_logs($1)
+ 	admin_pattern($1, openshift_log_t)
+ 
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/openvpn.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/openvpn.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/openvpn.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/openvpn.if	2015-11-20 17:07:58.000000000 +0100
+@@ -164,6 +164,24 @@
+ 
+ ########################################
+ ## <summary>
++##	Read and write to sopenvpn_image devices.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`openvpn_noatsecure',`
++	gen_require(`
++		type openvpn_t;
++	')
++
++    allow $1 openvpn_t:process noatsecure;
++')
++
++########################################
++## <summary>
+ ##	All of the rules required to
+ ##	administrate an openvpn environment.
+ ## </summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/pcp.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/pcp.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/pcp.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/pcp.if	2015-11-20 17:07:58.000000000 +0100
+@@ -19,11 +19,15 @@
+     type pcp_$1_t, pcp_domain;
+     type pcp_$1_exec_t;
+     init_daemon_domain(pcp_$1_t, pcp_$1_exec_t)
+-
++    
+     type pcp_$1_initrc_exec_t;
+     init_script_file(pcp_$1_initrc_exec_t)
+ 
+     auth_use_nsswitch(pcp_$1_t)
++
++    optional_policy(`
++        cron_system_entry(pcp_$1_t, pcp_$1_exec_t)
++    ')
+ ')
+ 
+ ######################################
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/prosody.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/prosody.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/prosody.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/prosody.if	2015-11-20 17:07:58.000000000 +0100
+@@ -167,6 +167,26 @@
+ 	roleattribute $2 prosody_roles;
+ ')
+ 
++######################################
++## <summary>
++##	Connect to prosody with a unix
++##	domain stream socket.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`prosody_stream_connect',`
++	gen_require(`
++		type prosody_t, prosody_var_run_t;
++	')
++
++	files_search_pids($1)
++	stream_connect_pattern($1, prosody_var_run_t, prosody_var_run_t, prosody_t)
++')
++
+ ########################################
+ ## <summary>
+ ##	Role access for prosody
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/pulseaudio.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/pulseaudio.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/pulseaudio.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/pulseaudio.if	2015-11-20 17:07:58.000000000 +0100
+@@ -40,7 +40,6 @@
+ 	allow $2 { pulseaudio_tmpfs_t pulseaudio_tmpfsfile }:file { manage_file_perms relabel_file_perms };
+ 
+ 	userdom_manage_tmp_role($1, pulseaudio_t)
+-	userdom_manage_tmpfs_role($1, pulseaudio_t)
+ 
+ 	allow $2 pulseaudio_t:dbus send_msg;
+ 	allow pulseaudio_t $2:dbus { acquire_svc send_msg };
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/raid.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/raid.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/raid.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/raid.if	2015-11-20 17:07:58.000000000 +0100
+@@ -187,4 +187,5 @@
+ 	')
+ 
+     files_etc_filetrans($1, mdadm_conf_t, file, "mdadm.conf")
++    files_etc_filetrans($1, mdadm_conf_t, file, "mdadm.conf.anacbak")
+ ')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/rhcs.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/rhcs.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/rhcs.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/rhcs.if	2015-11-20 17:07:58.000000000 +0100
+@@ -864,6 +864,29 @@
+     ps_process_pattern($1, cluster_t)
+ ')
+ 
++########################################
++## <summary>
++##	Send and receive messages from
++##	a cluster service over dbus.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`rhcs_dbus_chat_cluster',`
++	gen_require(`
++		type cluster_t;
++		class dbus send_msg;
++	')
++
++	allow $1 cluster_t:dbus send_msg;
++	allow cluster_t $1:dbus send_msg;
++')
++
++
++
+ #####################################
+ ## <summary>
+ ##  All of the rules required to administrate
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/rolekit.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/rolekit.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/rolekit.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/rolekit.if	2015-11-20 17:07:58.000000000 +0100
+@@ -95,11 +95,6 @@
+ ##	Domain allowed access.
+ ##	</summary>
+ ## </param>
+-## <param name="role">
+-##	<summary>
+-##	Role allowed access.
+-##	</summary>
+-## </param>
+ ## <rolecap/>
+ #
+ interface(`rolekit_admin',`
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/rpc.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/rpc.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/rpc.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/rpc.if	2015-11-20 17:07:58.000000000 +0100
+@@ -406,6 +406,24 @@
+ 	allow $1 var_lib_nfs_t:file relabel_file_perms;
+ ')
+ 
++########################################
++## <summary>
++##	Write keys for all user domains.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`rpc_rw_gssd_keys',`
++	gen_require(`
++		type gssd_t;
++	')
++
++	allow $1 gssd_t:key { read search setattr view write };
++')
++
+ #######################################
+ ## <summary>
+ ##  All of the rules required to
+@@ -428,7 +446,7 @@
+ 		attribute rpc_domain;
+ 		type nfsd_initrc_exec_t, rpcd_initrc_exec_t, exports_t;
+ 		type var_lib_nfs_t, rpcd_var_run_t, gssd_tmp_t;
+-		type nfsd_ro_t, nfsd_rw_t, gssd_keytab_t;
++		type  nfsd_rw_t, gssd_keytab_t;
+ 	')
+ 
+ 	allow $1 rpc_domain:process { ptrace signal_perms };
+@@ -449,7 +467,7 @@
+ 	admin_pattern($1, rpcd_var_run_t)
+ 
+ 	files_list_all($1)
+-	admin_pattern($1, { nfsd_ro_t nfsd_rw_t })
++	admin_pattern($1, nfsd_rw_t )
+ 
+ 	files_list_tmp($1)
+ 	admin_pattern($1, gssd_tmp_t)
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/rpm.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/rpm.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/rpm.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/rpm.if	2015-11-20 17:07:58.000000000 +0100
+@@ -386,12 +386,19 @@
+ ##	</summary>
+ ## </param>
+ #
+-interface(`rpm_named_filetrans_log_files',`
++interface(`rpm_named_filetrans',`
+ 	gen_require(`
+ 		type rpm_log_t;
++		type rpm_var_lib_t;
+ 	')
+-    logging_log_named_filetrans($1, rpm_log_t, file, "yum.log")
+-    logging_log_named_filetrans($1, rpm_log_t, file, "up2date")
++	logging_log_named_filetrans($1, rpm_log_t, file, "yum.log")
++	logging_log_named_filetrans($1, rpm_log_t, file, "up2date")
++	files_var_filetrans($1, rpm_var_lib_t, dir, "dnf")
++	files_var_filetrans($1, rpm_var_lib_t, dir, "yum")
++	files_var_filetrans($1, rpm_var_lib_t, dir, "rpm")
++	files_var_lib_filetrans($1, rpm_var_lib_t, dir, "dnf")
++	files_var_lib_filetrans($1, rpm_var_lib_t, dir, "yum")
++	files_var_lib_filetrans($1, rpm_var_lib_t, dir, "rpm")
+ ')
+ 
+ ########################################
+@@ -789,6 +796,7 @@
+ 
+         type rpm_log_t, rpm_tmpfs_t, rpm_tmp_t;
+         type rpm_script_tmp_t, rpm_script_tmpfs_t, rpm_file_t;
++        type rpm_var_run_t;
+     ')
+ 
+     allow $1 { rpm_t rpm_script_t }:process { ptrace signal_perms };
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/samba.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/samba.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/samba.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/samba.if	2015-11-20 17:07:58.000000000 +0100
+@@ -605,6 +605,24 @@
+ 	domtrans_pattern($1, smbd_exec_t, smbd_t)
+ ')
+ 
++########################################
++## <summary>
++##	Set attributes of samba_share directories.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`samba_setattr_samba_share_dirs',`
++	gen_require(`
++		type samba_share_t;
++	')
++
++	allow $1 samba_share_t:dir setattr_dir_perms;
++')
++
+ ######################################
+ ## <summary>
+ ##	Allow domain to signal samba
+@@ -622,6 +640,23 @@
+ 	allow $1 smbd_t:process signal;
+ ')
+ 
++######################################
++## <summary>
++##	Allow domain to signull samba
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`samba_signull_smbd',`
++	gen_require(`
++		type smbd_t;
++	')
++	allow $1 smbd_t:process signull;
++')
++
+ ########################################
+ ## <summary>
+ ##	Do not audit attempts to use file descriptors from samba.
+@@ -760,6 +795,61 @@
+ 
+ ########################################
+ ## <summary>
++##	Manage winbind  PID files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`samba_manage_winbind_pid',`
++	gen_require(`
++		type winbind_var_run_t;
++	')
++
++	files_search_pids($1)
++	manage_dirs_pattern($1, winbind_var_run_t, winbind_var_run_t)
++	manage_files_pattern($1, winbin_var_run_t, winbind_var_run_t)
++	manage_sock_files_pattern($1, winbind_var_run_t, winbind_var_run_t)
++')
++
++######################################
++## <summary>
++##	Allow domain to signull winbind
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`samba_signull_winbind',`
++	gen_require(`
++		type winbind_t;
++	')
++	allow $1 winbind_t:process signull;
++')
++
++######################################
++## <summary>
++##	Allow domain to signull samba_unconfined_net
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`samba_signull_unconfined_net',`
++	gen_require(`
++		type samba_unconfined_net_t;
++	')
++	allow $1 samba_unconfined_net_t:process signull;
++')
++
++########################################
++## <summary>
+ ##	Connect to winbind.
+ ## </summary>
+ ## <param name="domain">
+@@ -848,6 +938,7 @@
+ 		type winbind_var_run_t, winbind_tmp_t;
+ 		type smbd_keytab_t, samba_unit_file_t;
+         type samba_unconfined_script_t;
++        type samba_unconfined_script_exec_t;
+ 	')
+ 
+ 	allow $1 smbd_t:process signal_perms;
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/sandbox.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/sandbox.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/sandbox.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/sandbox.if	2015-11-20 17:07:58.000000000 +0100
+@@ -46,11 +46,6 @@
+ ##	Domain allowed access
+ ##	</summary>
+ ## </param>
+-## <param name="role">
+-##	<summary>
+-##	The role to be allowed the sandbox domain.
+-##	</summary>
+-## </param>
+ #
+ interface(`sandbox_dyntransition',`
+ 	gen_require(`
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/sandboxX.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/sandboxX.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/sandboxX.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/sandboxX.if	2015-11-20 17:07:58.000000000 +0100
+@@ -83,9 +83,10 @@
+ 		attribute sandbox_x_domain;
+ 		attribute sandbox_tmpfs_type;
+ 		attribute sandbox_type;
++        attribute sandbox_web_type;
+ 	')
+ 
+-	type $1_t, sandbox_x_domain, sandbox_type;
++	type $1_t, sandbox_x_domain, sandbox_type, sandbox_web_type;
+ 	application_type($1_t)
+ 	mcs_constrained($1_t)
+ 
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/snapper.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/snapper.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/snapper.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/snapper.if	2015-11-20 17:07:58.000000000 +0100
+@@ -41,6 +41,24 @@
+ 	allow snapperd_t $1:dbus send_msg;
+ ')
+ 
++########################################
++## <summary>
++##	Allow a domain to read inherited snapper pipe.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`snapper_read_inherited_pipe',`
++	gen_require(`
++		type snapperd_t;
++	')
++
++	allow $1 snapperd_t:fifo_file read_inherited_file_perms;
++')
++
+ #######################################
+ ## <summary>
+ ##      Allow domain to create .smapshot
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/snmp.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/snmp.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/snmp.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/snmp.if	2015-11-20 17:07:58.000000000 +0100
+@@ -111,7 +111,6 @@
+ 	')
+ 
+ 	allow $1 snmpd_var_lib_t:dir manage_dir_perms;
+-	files_var_lib_filetrans($1, snmpd_var_lib_t, dir)
+ ')
+ 
+ ########################################
+@@ -155,6 +154,27 @@
+ ')
+ 
+ ########################################
++## <summary>
++##	Do not audit attempts to manage
++##	snmpd lib content.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++#
++interface(`snmp_dontaudit_manage_snmp_var_lib_files',`
++	gen_require(`
++		type snmpd_var_lib_t;
++	')
++
++	dontaudit $1 snmpd_var_lib_t:dir manage_dir_perms;
++	dontaudit $1 snmpd_var_lib_t:file manage_file_perms;
++	dontaudit $1 snmpd_var_lib_t:lnk_file manage_lnk_file_perms;
++')
++
++########################################
+ ## <summary>
+ ##	Do not audit attempts to read
+ ##	snmpd lib content.
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/userhelper.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/userhelper.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/userhelper.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/userhelper.if	2015-11-20 17:07:58.000000000 +0100
+@@ -322,6 +322,10 @@
+ 	')
+ 
+ 	optional_policy(`
++		hddtemp_run($1_consolehelper_t, $2)
++	')
++
++	optional_policy(`
+ 		shutdown_run($1_consolehelper_t, $2)
+ 		shutdown_send_sigchld($3)
+ 	')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/virt.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/virt.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/virt.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/virt.if	2015-11-20 17:07:58.000000000 +0100
+@@ -209,6 +209,25 @@
+ 
+ ########################################
+ ## <summary>
++##	Allow domain to attach to virt sandbox TUN devices
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`virt_attach_sandbox_tun_iface',`
++	gen_require(`
++		attribute svirt_sandbox_domain;
++	')
++
++	allow $1 svirt_sandbox_domain:tun_socket relabelfrom;
++	allow $1 self:tun_socket relabelto;
++')
++
++########################################
++## <summary>
+ ##	Read virt config files.
+ ## </summary>
+ ## <param name="domain">
+@@ -357,6 +376,7 @@
+ 
+ 	files_search_pids($1)
+ 	read_files_pattern($1, virt_var_run_t, virt_var_run_t)
++    read_lnk_files_pattern($1, virt_var_run_t, virt_var_run_t)
+ ')
+ 
+ ########################################
+@@ -1128,6 +1148,7 @@
+ 		gnome_cache_filetrans($1, virt_home_t, dir, "libvirt-sandbox")
+ 		gnome_cache_filetrans($1, virt_home_t, dir, "gnome-boxes")
+ 		gnome_data_filetrans($1, svirt_home_t, dir, "images")
++		gnome_data_filetrans($1, svirt_home_t, dir, "boot")
+ 	')
+ ')
+ 
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/watchdog.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/watchdog.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/watchdog.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/watchdog.if	2015-11-20 17:07:58.000000000 +0100
+@@ -37,3 +37,21 @@
+ 	files_search_pids($1)
+ 	admin_pattern($1, watchdog_var_run_t)
+ ')
++
++#######################################
++## <summary>
++##  Allow read watchdog_unconfined_t lnk files.
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed access.
++##  </summary>
++## </param>
++#
++interface(`watchdog_unconfined_exec_read_lnk_files',`
++	gen_require(`
++		type watchdog_unconfined_exec_t;
++	')
++
++    read_lnk_files_pattern($1,watchdog_unconfined_exec_t, watchdog_unconfined_exec_t)
++')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/wine.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/wine.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/wine.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/wine.if	2015-11-20 17:07:58.000000000 +0100
+@@ -99,7 +99,7 @@
+ 	corecmd_bin_domtrans($1_wine_t, $1_t)
+ 
+ 	userdom_unpriv_usertype($1, $1_wine_t)
+-	userdom_manage_tmpfs_role($2, $1_wine_t)
++	userdom_manage_tmp_role($2, $1_wine_t)
+ 	userdom_manage_home_role($2 ,$1_wine_t)
+ 
+ 	domain_mmap_low($1_wine_t)
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/contrib/wm.if centos-7.2.1511/usr/share/selinux/devel/include/contrib/wm.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/contrib/wm.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/contrib/wm.if	2015-11-20 17:07:58.000000000 +0100
+@@ -48,7 +48,6 @@
+ 	allow $3 $1_wm_t:dbus send_msg;
+ 
+ 	userdom_manage_home_role($2, $1_wm_t)
+-	userdom_manage_tmpfs_role($2, $1_wm_t)
+ 	userdom_manage_tmp_role($2, $1_wm_t)
+ 	userdom_exec_user_tmp_files($1_wm_t)
+ 
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/kernel/corenetwork.if centos-7.2.1511/usr/share/selinux/devel/include/kernel/corenetwork.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/kernel/corenetwork.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/kernel/corenetwork.if	2015-11-20 17:07:58.000000000 +0100
+@@ -24164,6 +24164,486 @@
+ 
+ ########################################
+ ## <summary>
++##	Send and receive TCP traffic on the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_tcp_sendrecv_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	allow $1 cyrus_imapd_port_t:tcp_socket { send_msg recv_msg };
++')
++
++########################################
++## <summary>
++##	Send UDP traffic on the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_udp_send_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	allow $1 cyrus_imapd_port_t:udp_socket send_msg;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send UDP traffic on the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_send_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	dontaudit $1 cyrus_imapd_port_t:udp_socket send_msg;
++')
++
++########################################
++## <summary>
++##	Receive UDP traffic on the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_udp_receive_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	allow $1 cyrus_imapd_port_t:udp_socket recv_msg;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive UDP traffic on the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_receive_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	dontaudit $1 cyrus_imapd_port_t:udp_socket recv_msg;
++')
++
++########################################
++## <summary>
++##	Send and receive UDP traffic on the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_udp_sendrecv_cyrus_imapd_port',`
++	corenet_udp_send_cyrus_imapd_port($1)
++	corenet_udp_receive_cyrus_imapd_port($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive
++##	UDP traffic on the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_sendrecv_cyrus_imapd_port',`
++	corenet_dontaudit_udp_send_cyrus_imapd_port($1)
++	corenet_dontaudit_udp_receive_cyrus_imapd_port($1)
++')
++
++########################################
++## <summary>
++##	Bind TCP sockets to the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_tcp_bind_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	allow $1 cyrus_imapd_port_t:tcp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Bind UDP sockets to the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_udp_bind_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	allow $1 cyrus_imapd_port_t:udp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to sbind to cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_bind_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	dontaudit $1 cyrus_imapd_port_t:udp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Make a TCP connection to the cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_tcp_connect_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	allow $1 cyrus_imapd_port_t:tcp_socket name_connect;
++')
++########################################
++## <summary>
++##	Do not audit attempts to make a TCP connection to cyrus_imapd port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_dontaudit_tcp_connect_cyrus_imapd_port',`
++	gen_require(`
++		type cyrus_imapd_port_t;
++	')
++
++	dontaudit $1 cyrus_imapd_port_t:tcp_socket name_connect;
++')
++
++
++########################################
++## <summary>
++##	Send cyrus_imapd_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_send_cyrus_imapd_client_packets',`
++	gen_require(`
++		type cyrus_imapd_client_packet_t;
++	')
++
++	allow $1 cyrus_imapd_client_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send cyrus_imapd_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_send_cyrus_imapd_client_packets',`
++	gen_require(`
++		type cyrus_imapd_client_packet_t;
++	')
++
++	dontaudit $1 cyrus_imapd_client_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Receive cyrus_imapd_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_receive_cyrus_imapd_client_packets',`
++	gen_require(`
++		type cyrus_imapd_client_packet_t;
++	')
++
++	allow $1 cyrus_imapd_client_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive cyrus_imapd_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_receive_cyrus_imapd_client_packets',`
++	gen_require(`
++		type cyrus_imapd_client_packet_t;
++	')
++
++	dontaudit $1 cyrus_imapd_client_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Send and receive cyrus_imapd_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_sendrecv_cyrus_imapd_client_packets',`
++	corenet_send_cyrus_imapd_client_packets($1)
++	corenet_receive_cyrus_imapd_client_packets($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive cyrus_imapd_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_sendrecv_cyrus_imapd_client_packets',`
++	corenet_dontaudit_send_cyrus_imapd_client_packets($1)
++	corenet_dontaudit_receive_cyrus_imapd_client_packets($1)
++')
++
++########################################
++## <summary>
++##	Relabel packets to cyrus_imapd_client the packet type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_relabelto_cyrus_imapd_client_packets',`
++	gen_require(`
++		type cyrus_imapd_client_packet_t;
++	')
++
++	allow $1 cyrus_imapd_client_packet_t:packet relabelto;
++')
++
++
++########################################
++## <summary>
++##	Send cyrus_imapd_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_send_cyrus_imapd_server_packets',`
++	gen_require(`
++		type cyrus_imapd_server_packet_t;
++	')
++
++	allow $1 cyrus_imapd_server_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send cyrus_imapd_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_send_cyrus_imapd_server_packets',`
++	gen_require(`
++		type cyrus_imapd_server_packet_t;
++	')
++
++	dontaudit $1 cyrus_imapd_server_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Receive cyrus_imapd_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_receive_cyrus_imapd_server_packets',`
++	gen_require(`
++		type cyrus_imapd_server_packet_t;
++	')
++
++	allow $1 cyrus_imapd_server_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive cyrus_imapd_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_receive_cyrus_imapd_server_packets',`
++	gen_require(`
++		type cyrus_imapd_server_packet_t;
++	')
++
++	dontaudit $1 cyrus_imapd_server_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Send and receive cyrus_imapd_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_sendrecv_cyrus_imapd_server_packets',`
++	corenet_send_cyrus_imapd_server_packets($1)
++	corenet_receive_cyrus_imapd_server_packets($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive cyrus_imapd_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_sendrecv_cyrus_imapd_server_packets',`
++	corenet_dontaudit_send_cyrus_imapd_server_packets($1)
++	corenet_dontaudit_receive_cyrus_imapd_server_packets($1)
++')
++
++########################################
++## <summary>
++##	Relabel packets to cyrus_imapd_server the packet type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_relabelto_cyrus_imapd_server_packets',`
++	gen_require(`
++		type cyrus_imapd_server_packet_t;
++	')
++
++	allow $1 cyrus_imapd_server_packet_t:packet relabelto;
++')
++
++
++
++
++########################################
++## <summary>
+ ##	Send and receive TCP traffic on the daap port.
+ ## </summary>
+ ## <param name="domain">
+@@ -36016,7 +36496,487 @@
+ 
+ ########################################
+ ## <summary>
+-##	Relabel packets to gear_client the packet type.
++##	Relabel packets to gear_client the packet type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_relabelto_gear_client_packets',`
++	gen_require(`
++		type gear_client_packet_t;
++	')
++
++	allow $1 gear_client_packet_t:packet relabelto;
++')
++
++
++########################################
++## <summary>
++##	Send gear_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_send_gear_server_packets',`
++	gen_require(`
++		type gear_server_packet_t;
++	')
++
++	allow $1 gear_server_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send gear_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_send_gear_server_packets',`
++	gen_require(`
++		type gear_server_packet_t;
++	')
++
++	dontaudit $1 gear_server_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Receive gear_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_receive_gear_server_packets',`
++	gen_require(`
++		type gear_server_packet_t;
++	')
++
++	allow $1 gear_server_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive gear_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_receive_gear_server_packets',`
++	gen_require(`
++		type gear_server_packet_t;
++	')
++
++	dontaudit $1 gear_server_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Send and receive gear_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_sendrecv_gear_server_packets',`
++	corenet_send_gear_server_packets($1)
++	corenet_receive_gear_server_packets($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive gear_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_sendrecv_gear_server_packets',`
++	corenet_dontaudit_send_gear_server_packets($1)
++	corenet_dontaudit_receive_gear_server_packets($1)
++')
++
++########################################
++## <summary>
++##	Relabel packets to gear_server the packet type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_relabelto_gear_server_packets',`
++	gen_require(`
++		type gear_server_packet_t;
++	')
++
++	allow $1 gear_server_packet_t:packet relabelto;
++')
++
++
++
++
++########################################
++## <summary>
++##	Send and receive TCP traffic on the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_tcp_sendrecv_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	allow $1 geneve_port_t:tcp_socket { send_msg recv_msg };
++')
++
++########################################
++## <summary>
++##	Send UDP traffic on the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_udp_send_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	allow $1 geneve_port_t:udp_socket send_msg;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send UDP traffic on the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_send_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	dontaudit $1 geneve_port_t:udp_socket send_msg;
++')
++
++########################################
++## <summary>
++##	Receive UDP traffic on the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_udp_receive_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	allow $1 geneve_port_t:udp_socket recv_msg;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive UDP traffic on the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_receive_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	dontaudit $1 geneve_port_t:udp_socket recv_msg;
++')
++
++########################################
++## <summary>
++##	Send and receive UDP traffic on the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_udp_sendrecv_geneve_port',`
++	corenet_udp_send_geneve_port($1)
++	corenet_udp_receive_geneve_port($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive
++##	UDP traffic on the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_sendrecv_geneve_port',`
++	corenet_dontaudit_udp_send_geneve_port($1)
++	corenet_dontaudit_udp_receive_geneve_port($1)
++')
++
++########################################
++## <summary>
++##	Bind TCP sockets to the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_tcp_bind_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	allow $1 geneve_port_t:tcp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Bind UDP sockets to the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_udp_bind_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	allow $1 geneve_port_t:udp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to sbind to geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_bind_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	dontaudit $1 geneve_port_t:udp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Make a TCP connection to the geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_tcp_connect_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	allow $1 geneve_port_t:tcp_socket name_connect;
++')
++########################################
++## <summary>
++##	Do not audit attempts to make a TCP connection to geneve port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_dontaudit_tcp_connect_geneve_port',`
++	gen_require(`
++		type geneve_port_t;
++	')
++
++	dontaudit $1 geneve_port_t:tcp_socket name_connect;
++')
++
++
++########################################
++## <summary>
++##	Send geneve_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_send_geneve_client_packets',`
++	gen_require(`
++		type geneve_client_packet_t;
++	')
++
++	allow $1 geneve_client_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send geneve_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_send_geneve_client_packets',`
++	gen_require(`
++		type geneve_client_packet_t;
++	')
++
++	dontaudit $1 geneve_client_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Receive geneve_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_receive_geneve_client_packets',`
++	gen_require(`
++		type geneve_client_packet_t;
++	')
++
++	allow $1 geneve_client_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive geneve_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_receive_geneve_client_packets',`
++	gen_require(`
++		type geneve_client_packet_t;
++	')
++
++	dontaudit $1 geneve_client_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Send and receive geneve_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_sendrecv_geneve_client_packets',`
++	corenet_send_geneve_client_packets($1)
++	corenet_receive_geneve_client_packets($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive geneve_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_sendrecv_geneve_client_packets',`
++	corenet_dontaudit_send_geneve_client_packets($1)
++	corenet_dontaudit_receive_geneve_client_packets($1)
++')
++
++########################################
++## <summary>
++##	Relabel packets to geneve_client the packet type.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -36024,18 +36984,18 @@
+ ##	</summary>
+ ## </param>
+ #
+-interface(`corenet_relabelto_gear_client_packets',`
++interface(`corenet_relabelto_geneve_client_packets',`
+ 	gen_require(`
+-		type gear_client_packet_t;
++		type geneve_client_packet_t;
+ 	')
+ 
+-	allow $1 gear_client_packet_t:packet relabelto;
++	allow $1 geneve_client_packet_t:packet relabelto;
+ ')
+ 
+ 
+ ########################################
+ ## <summary>
+-##	Send gear_server packets.
++##	Send geneve_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -36044,17 +37004,17 @@
+ ## </param>
+ ## <infoflow type="write" weight="10"/>
+ #
+-interface(`corenet_send_gear_server_packets',`
++interface(`corenet_send_geneve_server_packets',`
+ 	gen_require(`
+-		type gear_server_packet_t;
++		type geneve_server_packet_t;
+ 	')
+ 
+-	allow $1 gear_server_packet_t:packet send;
++	allow $1 geneve_server_packet_t:packet send;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to send gear_server packets.
++##	Do not audit attempts to send geneve_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -36063,17 +37023,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_send_gear_server_packets',`
++interface(`corenet_dontaudit_send_geneve_server_packets',`
+ 	gen_require(`
+-		type gear_server_packet_t;
++		type geneve_server_packet_t;
+ 	')
+ 
+-	dontaudit $1 gear_server_packet_t:packet send;
++	dontaudit $1 geneve_server_packet_t:packet send;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Receive gear_server packets.
++##	Receive geneve_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -36082,17 +37042,17 @@
+ ## </param>
+ ## <infoflow type="read" weight="10"/>
+ #
+-interface(`corenet_receive_gear_server_packets',`
++interface(`corenet_receive_geneve_server_packets',`
+ 	gen_require(`
+-		type gear_server_packet_t;
++		type geneve_server_packet_t;
+ 	')
+ 
+-	allow $1 gear_server_packet_t:packet recv;
++	allow $1 geneve_server_packet_t:packet recv;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to receive gear_server packets.
++##	Do not audit attempts to receive geneve_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -36101,17 +37061,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_receive_gear_server_packets',`
++interface(`corenet_dontaudit_receive_geneve_server_packets',`
+ 	gen_require(`
+-		type gear_server_packet_t;
++		type geneve_server_packet_t;
+ 	')
+ 
+-	dontaudit $1 gear_server_packet_t:packet recv;
++	dontaudit $1 geneve_server_packet_t:packet recv;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Send and receive gear_server packets.
++##	Send and receive geneve_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -36120,14 +37080,14 @@
+ ## </param>
+ ## <infoflow type="both" weight="10"/>
+ #
+-interface(`corenet_sendrecv_gear_server_packets',`
+-	corenet_send_gear_server_packets($1)
+-	corenet_receive_gear_server_packets($1)
++interface(`corenet_sendrecv_geneve_server_packets',`
++	corenet_send_geneve_server_packets($1)
++	corenet_receive_geneve_server_packets($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to send and receive gear_server packets.
++##	Do not audit attempts to send and receive geneve_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -36136,14 +37096,14 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_sendrecv_gear_server_packets',`
+-	corenet_dontaudit_send_gear_server_packets($1)
+-	corenet_dontaudit_receive_gear_server_packets($1)
++interface(`corenet_dontaudit_sendrecv_geneve_server_packets',`
++	corenet_dontaudit_send_geneve_server_packets($1)
++	corenet_dontaudit_receive_geneve_server_packets($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Relabel packets to gear_server the packet type.
++##	Relabel packets to geneve_server the packet type.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -36151,12 +37111,12 @@
+ ##	</summary>
+ ## </param>
+ #
+-interface(`corenet_relabelto_gear_server_packets',`
++interface(`corenet_relabelto_geneve_server_packets',`
+ 	gen_require(`
+-		type gear_server_packet_t;
++		type geneve_server_packet_t;
+ 	')
+ 
+-	allow $1 gear_server_packet_t:packet relabelto;
++	allow $1 geneve_server_packet_t:packet relabelto;
+ ')
+ 
+ 
+@@ -77372,7 +78332,487 @@
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to receive openvswitch_server packets.
++##	Do not audit attempts to receive openvswitch_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_receive_openvswitch_server_packets',`
++	gen_require(`
++		type openvswitch_server_packet_t;
++	')
++
++	dontaudit $1 openvswitch_server_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Send and receive openvswitch_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_sendrecv_openvswitch_server_packets',`
++	corenet_send_openvswitch_server_packets($1)
++	corenet_receive_openvswitch_server_packets($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive openvswitch_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_sendrecv_openvswitch_server_packets',`
++	corenet_dontaudit_send_openvswitch_server_packets($1)
++	corenet_dontaudit_receive_openvswitch_server_packets($1)
++')
++
++########################################
++## <summary>
++##	Relabel packets to openvswitch_server the packet type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_relabelto_openvswitch_server_packets',`
++	gen_require(`
++		type openvswitch_server_packet_t;
++	')
++
++	allow $1 openvswitch_server_packet_t:packet relabelto;
++')
++
++
++
++
++########################################
++## <summary>
++##	Send and receive TCP traffic on the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_tcp_sendrecv_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	allow $1 osapi_compute_port_t:tcp_socket { send_msg recv_msg };
++')
++
++########################################
++## <summary>
++##	Send UDP traffic on the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_udp_send_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	allow $1 osapi_compute_port_t:udp_socket send_msg;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send UDP traffic on the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_send_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	dontaudit $1 osapi_compute_port_t:udp_socket send_msg;
++')
++
++########################################
++## <summary>
++##	Receive UDP traffic on the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_udp_receive_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	allow $1 osapi_compute_port_t:udp_socket recv_msg;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive UDP traffic on the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_receive_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	dontaudit $1 osapi_compute_port_t:udp_socket recv_msg;
++')
++
++########################################
++## <summary>
++##	Send and receive UDP traffic on the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_udp_sendrecv_osapi_compute_port',`
++	corenet_udp_send_osapi_compute_port($1)
++	corenet_udp_receive_osapi_compute_port($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive
++##	UDP traffic on the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_sendrecv_osapi_compute_port',`
++	corenet_dontaudit_udp_send_osapi_compute_port($1)
++	corenet_dontaudit_udp_receive_osapi_compute_port($1)
++')
++
++########################################
++## <summary>
++##	Bind TCP sockets to the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_tcp_bind_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	allow $1 osapi_compute_port_t:tcp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Bind UDP sockets to the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_udp_bind_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	allow $1 osapi_compute_port_t:udp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to sbind to osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_bind_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	dontaudit $1 osapi_compute_port_t:udp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Make a TCP connection to the osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_tcp_connect_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	allow $1 osapi_compute_port_t:tcp_socket name_connect;
++')
++########################################
++## <summary>
++##	Do not audit attempts to make a TCP connection to osapi_compute port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_dontaudit_tcp_connect_osapi_compute_port',`
++	gen_require(`
++		type osapi_compute_port_t;
++	')
++
++	dontaudit $1 osapi_compute_port_t:tcp_socket name_connect;
++')
++
++
++########################################
++## <summary>
++##	Send osapi_compute_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_send_osapi_compute_client_packets',`
++	gen_require(`
++		type osapi_compute_client_packet_t;
++	')
++
++	allow $1 osapi_compute_client_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send osapi_compute_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_send_osapi_compute_client_packets',`
++	gen_require(`
++		type osapi_compute_client_packet_t;
++	')
++
++	dontaudit $1 osapi_compute_client_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Receive osapi_compute_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_receive_osapi_compute_client_packets',`
++	gen_require(`
++		type osapi_compute_client_packet_t;
++	')
++
++	allow $1 osapi_compute_client_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive osapi_compute_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_receive_osapi_compute_client_packets',`
++	gen_require(`
++		type osapi_compute_client_packet_t;
++	')
++
++	dontaudit $1 osapi_compute_client_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Send and receive osapi_compute_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_sendrecv_osapi_compute_client_packets',`
++	corenet_send_osapi_compute_client_packets($1)
++	corenet_receive_osapi_compute_client_packets($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive osapi_compute_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_sendrecv_osapi_compute_client_packets',`
++	corenet_dontaudit_send_osapi_compute_client_packets($1)
++	corenet_dontaudit_receive_osapi_compute_client_packets($1)
++')
++
++########################################
++## <summary>
++##	Relabel packets to osapi_compute_client the packet type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_relabelto_osapi_compute_client_packets',`
++	gen_require(`
++		type osapi_compute_client_packet_t;
++	')
++
++	allow $1 osapi_compute_client_packet_t:packet relabelto;
++')
++
++
++########################################
++## <summary>
++##	Send osapi_compute_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_send_osapi_compute_server_packets',`
++	gen_require(`
++		type osapi_compute_server_packet_t;
++	')
++
++	allow $1 osapi_compute_server_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send osapi_compute_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_send_osapi_compute_server_packets',`
++	gen_require(`
++		type osapi_compute_server_packet_t;
++	')
++
++	dontaudit $1 osapi_compute_server_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Receive osapi_compute_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_receive_osapi_compute_server_packets',`
++	gen_require(`
++		type osapi_compute_server_packet_t;
++	')
++
++	allow $1 osapi_compute_server_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive osapi_compute_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77381,17 +78821,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_receive_openvswitch_server_packets',`
++interface(`corenet_dontaudit_receive_osapi_compute_server_packets',`
+ 	gen_require(`
+-		type openvswitch_server_packet_t;
++		type osapi_compute_server_packet_t;
+ 	')
+ 
+-	dontaudit $1 openvswitch_server_packet_t:packet recv;
++	dontaudit $1 osapi_compute_server_packet_t:packet recv;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Send and receive openvswitch_server packets.
++##	Send and receive osapi_compute_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77400,14 +78840,14 @@
+ ## </param>
+ ## <infoflow type="both" weight="10"/>
+ #
+-interface(`corenet_sendrecv_openvswitch_server_packets',`
+-	corenet_send_openvswitch_server_packets($1)
+-	corenet_receive_openvswitch_server_packets($1)
++interface(`corenet_sendrecv_osapi_compute_server_packets',`
++	corenet_send_osapi_compute_server_packets($1)
++	corenet_receive_osapi_compute_server_packets($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to send and receive openvswitch_server packets.
++##	Do not audit attempts to send and receive osapi_compute_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77416,14 +78856,14 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_sendrecv_openvswitch_server_packets',`
+-	corenet_dontaudit_send_openvswitch_server_packets($1)
+-	corenet_dontaudit_receive_openvswitch_server_packets($1)
++interface(`corenet_dontaudit_sendrecv_osapi_compute_server_packets',`
++	corenet_dontaudit_send_osapi_compute_server_packets($1)
++	corenet_dontaudit_receive_osapi_compute_server_packets($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Relabel packets to openvswitch_server the packet type.
++##	Relabel packets to osapi_compute_server the packet type.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77431,12 +78871,12 @@
+ ##	</summary>
+ ## </param>
+ #
+-interface(`corenet_relabelto_openvswitch_server_packets',`
++interface(`corenet_relabelto_osapi_compute_server_packets',`
+ 	gen_require(`
+-		type openvswitch_server_packet_t;
++		type osapi_compute_server_packet_t;
+ 	')
+ 
+-	allow $1 openvswitch_server_packet_t:packet relabelto;
++	allow $1 osapi_compute_server_packet_t:packet relabelto;
+ ')
+ 
+ 
+@@ -77444,7 +78884,7 @@
+ 
+ ########################################
+ ## <summary>
+-##	Send and receive TCP traffic on the osapi_compute port.
++##	Send and receive TCP traffic on the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77453,17 +78893,17 @@
+ ## </param>
+ ## <infoflow type="both" weight="10"/>
+ #
+-interface(`corenet_tcp_sendrecv_osapi_compute_port',`
++interface(`corenet_tcp_sendrecv_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	allow $1 osapi_compute_port_t:tcp_socket { send_msg recv_msg };
++	allow $1 ovsdb_port_t:tcp_socket { send_msg recv_msg };
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Send UDP traffic on the osapi_compute port.
++##	Send UDP traffic on the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77472,17 +78912,17 @@
+ ## </param>
+ ## <infoflow type="write" weight="10"/>
+ #
+-interface(`corenet_udp_send_osapi_compute_port',`
++interface(`corenet_udp_send_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	allow $1 osapi_compute_port_t:udp_socket send_msg;
++	allow $1 ovsdb_port_t:udp_socket send_msg;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to send UDP traffic on the osapi_compute port.
++##	Do not audit attempts to send UDP traffic on the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77491,17 +78931,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_udp_send_osapi_compute_port',`
++interface(`corenet_dontaudit_udp_send_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	dontaudit $1 osapi_compute_port_t:udp_socket send_msg;
++	dontaudit $1 ovsdb_port_t:udp_socket send_msg;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Receive UDP traffic on the osapi_compute port.
++##	Receive UDP traffic on the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77510,17 +78950,17 @@
+ ## </param>
+ ## <infoflow type="read" weight="10"/>
+ #
+-interface(`corenet_udp_receive_osapi_compute_port',`
++interface(`corenet_udp_receive_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	allow $1 osapi_compute_port_t:udp_socket recv_msg;
++	allow $1 ovsdb_port_t:udp_socket recv_msg;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to receive UDP traffic on the osapi_compute port.
++##	Do not audit attempts to receive UDP traffic on the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77529,17 +78969,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_udp_receive_osapi_compute_port',`
++interface(`corenet_dontaudit_udp_receive_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	dontaudit $1 osapi_compute_port_t:udp_socket recv_msg;
++	dontaudit $1 ovsdb_port_t:udp_socket recv_msg;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Send and receive UDP traffic on the osapi_compute port.
++##	Send and receive UDP traffic on the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77548,15 +78988,15 @@
+ ## </param>
+ ## <infoflow type="both" weight="10"/>
+ #
+-interface(`corenet_udp_sendrecv_osapi_compute_port',`
+-	corenet_udp_send_osapi_compute_port($1)
+-	corenet_udp_receive_osapi_compute_port($1)
++interface(`corenet_udp_sendrecv_ovsdb_port',`
++	corenet_udp_send_ovsdb_port($1)
++	corenet_udp_receive_ovsdb_port($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+ ##	Do not audit attempts to send and receive
+-##	UDP traffic on the osapi_compute port.
++##	UDP traffic on the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77565,14 +79005,14 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_udp_sendrecv_osapi_compute_port',`
+-	corenet_dontaudit_udp_send_osapi_compute_port($1)
+-	corenet_dontaudit_udp_receive_osapi_compute_port($1)
++interface(`corenet_dontaudit_udp_sendrecv_ovsdb_port',`
++	corenet_dontaudit_udp_send_ovsdb_port($1)
++	corenet_dontaudit_udp_receive_ovsdb_port($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Bind TCP sockets to the osapi_compute port.
++##	Bind TCP sockets to the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77581,18 +79021,18 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_tcp_bind_osapi_compute_port',`
++interface(`corenet_tcp_bind_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	allow $1 osapi_compute_port_t:tcp_socket name_bind;
++	allow $1 ovsdb_port_t:tcp_socket name_bind;
+ 	
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Bind UDP sockets to the osapi_compute port.
++##	Bind UDP sockets to the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77601,18 +79041,18 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_udp_bind_osapi_compute_port',`
++interface(`corenet_udp_bind_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	allow $1 osapi_compute_port_t:udp_socket name_bind;
++	allow $1 ovsdb_port_t:udp_socket name_bind;
+ 	
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to sbind to osapi_compute port.
++##	Do not audit attempts to sbind to ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77621,18 +79061,18 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_udp_bind_osapi_compute_port',`
++interface(`corenet_dontaudit_udp_bind_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	dontaudit $1 osapi_compute_port_t:udp_socket name_bind;
++	dontaudit $1 ovsdb_port_t:udp_socket name_bind;
+ 	
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Make a TCP connection to the osapi_compute port.
++##	Make a TCP connection to the ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77640,16 +79080,16 @@
+ ##	</summary>
+ ## </param>
+ #
+-interface(`corenet_tcp_connect_osapi_compute_port',`
++interface(`corenet_tcp_connect_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	allow $1 osapi_compute_port_t:tcp_socket name_connect;
++	allow $1 ovsdb_port_t:tcp_socket name_connect;
+ ')
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to make a TCP connection to osapi_compute port.
++##	Do not audit attempts to make a TCP connection to ovsdb port.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77657,18 +79097,18 @@
+ ##	</summary>
+ ## </param>
+ #
+-interface(`corenet_dontaudit_tcp_connect_osapi_compute_port',`
++interface(`corenet_dontaudit_tcp_connect_ovsdb_port',`
+ 	gen_require(`
+-		type osapi_compute_port_t;
++		type ovsdb_port_t;
+ 	')
+ 
+-	dontaudit $1 osapi_compute_port_t:tcp_socket name_connect;
++	dontaudit $1 ovsdb_port_t:tcp_socket name_connect;
+ ')
+ 
+ 
+ ########################################
+ ## <summary>
+-##	Send osapi_compute_client packets.
++##	Send ovsdb_client packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77677,17 +79117,17 @@
+ ## </param>
+ ## <infoflow type="write" weight="10"/>
+ #
+-interface(`corenet_send_osapi_compute_client_packets',`
++interface(`corenet_send_ovsdb_client_packets',`
+ 	gen_require(`
+-		type osapi_compute_client_packet_t;
++		type ovsdb_client_packet_t;
+ 	')
+ 
+-	allow $1 osapi_compute_client_packet_t:packet send;
++	allow $1 ovsdb_client_packet_t:packet send;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to send osapi_compute_client packets.
++##	Do not audit attempts to send ovsdb_client packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77696,17 +79136,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_send_osapi_compute_client_packets',`
++interface(`corenet_dontaudit_send_ovsdb_client_packets',`
+ 	gen_require(`
+-		type osapi_compute_client_packet_t;
++		type ovsdb_client_packet_t;
+ 	')
+ 
+-	dontaudit $1 osapi_compute_client_packet_t:packet send;
++	dontaudit $1 ovsdb_client_packet_t:packet send;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Receive osapi_compute_client packets.
++##	Receive ovsdb_client packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77715,17 +79155,17 @@
+ ## </param>
+ ## <infoflow type="read" weight="10"/>
+ #
+-interface(`corenet_receive_osapi_compute_client_packets',`
++interface(`corenet_receive_ovsdb_client_packets',`
+ 	gen_require(`
+-		type osapi_compute_client_packet_t;
++		type ovsdb_client_packet_t;
+ 	')
+ 
+-	allow $1 osapi_compute_client_packet_t:packet recv;
++	allow $1 ovsdb_client_packet_t:packet recv;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to receive osapi_compute_client packets.
++##	Do not audit attempts to receive ovsdb_client packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77734,17 +79174,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_receive_osapi_compute_client_packets',`
++interface(`corenet_dontaudit_receive_ovsdb_client_packets',`
+ 	gen_require(`
+-		type osapi_compute_client_packet_t;
++		type ovsdb_client_packet_t;
+ 	')
+ 
+-	dontaudit $1 osapi_compute_client_packet_t:packet recv;
++	dontaudit $1 ovsdb_client_packet_t:packet recv;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Send and receive osapi_compute_client packets.
++##	Send and receive ovsdb_client packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77753,14 +79193,14 @@
+ ## </param>
+ ## <infoflow type="both" weight="10"/>
+ #
+-interface(`corenet_sendrecv_osapi_compute_client_packets',`
+-	corenet_send_osapi_compute_client_packets($1)
+-	corenet_receive_osapi_compute_client_packets($1)
++interface(`corenet_sendrecv_ovsdb_client_packets',`
++	corenet_send_ovsdb_client_packets($1)
++	corenet_receive_ovsdb_client_packets($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to send and receive osapi_compute_client packets.
++##	Do not audit attempts to send and receive ovsdb_client packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77769,14 +79209,14 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_sendrecv_osapi_compute_client_packets',`
+-	corenet_dontaudit_send_osapi_compute_client_packets($1)
+-	corenet_dontaudit_receive_osapi_compute_client_packets($1)
++interface(`corenet_dontaudit_sendrecv_ovsdb_client_packets',`
++	corenet_dontaudit_send_ovsdb_client_packets($1)
++	corenet_dontaudit_receive_ovsdb_client_packets($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Relabel packets to osapi_compute_client the packet type.
++##	Relabel packets to ovsdb_client the packet type.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77784,18 +79224,18 @@
+ ##	</summary>
+ ## </param>
+ #
+-interface(`corenet_relabelto_osapi_compute_client_packets',`
++interface(`corenet_relabelto_ovsdb_client_packets',`
+ 	gen_require(`
+-		type osapi_compute_client_packet_t;
++		type ovsdb_client_packet_t;
+ 	')
+ 
+-	allow $1 osapi_compute_client_packet_t:packet relabelto;
++	allow $1 ovsdb_client_packet_t:packet relabelto;
+ ')
+ 
+ 
+ ########################################
+ ## <summary>
+-##	Send osapi_compute_server packets.
++##	Send ovsdb_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77804,17 +79244,17 @@
+ ## </param>
+ ## <infoflow type="write" weight="10"/>
+ #
+-interface(`corenet_send_osapi_compute_server_packets',`
++interface(`corenet_send_ovsdb_server_packets',`
+ 	gen_require(`
+-		type osapi_compute_server_packet_t;
++		type ovsdb_server_packet_t;
+ 	')
+ 
+-	allow $1 osapi_compute_server_packet_t:packet send;
++	allow $1 ovsdb_server_packet_t:packet send;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to send osapi_compute_server packets.
++##	Do not audit attempts to send ovsdb_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77823,17 +79263,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_send_osapi_compute_server_packets',`
++interface(`corenet_dontaudit_send_ovsdb_server_packets',`
+ 	gen_require(`
+-		type osapi_compute_server_packet_t;
++		type ovsdb_server_packet_t;
+ 	')
+ 
+-	dontaudit $1 osapi_compute_server_packet_t:packet send;
++	dontaudit $1 ovsdb_server_packet_t:packet send;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Receive osapi_compute_server packets.
++##	Receive ovsdb_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77842,17 +79282,17 @@
+ ## </param>
+ ## <infoflow type="read" weight="10"/>
+ #
+-interface(`corenet_receive_osapi_compute_server_packets',`
++interface(`corenet_receive_ovsdb_server_packets',`
+ 	gen_require(`
+-		type osapi_compute_server_packet_t;
++		type ovsdb_server_packet_t;
+ 	')
+ 
+-	allow $1 osapi_compute_server_packet_t:packet recv;
++	allow $1 ovsdb_server_packet_t:packet recv;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to receive osapi_compute_server packets.
++##	Do not audit attempts to receive ovsdb_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77861,17 +79301,17 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_receive_osapi_compute_server_packets',`
++interface(`corenet_dontaudit_receive_ovsdb_server_packets',`
+ 	gen_require(`
+-		type osapi_compute_server_packet_t;
++		type ovsdb_server_packet_t;
+ 	')
+ 
+-	dontaudit $1 osapi_compute_server_packet_t:packet recv;
++	dontaudit $1 ovsdb_server_packet_t:packet recv;
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Send and receive osapi_compute_server packets.
++##	Send and receive ovsdb_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77880,14 +79320,14 @@
+ ## </param>
+ ## <infoflow type="both" weight="10"/>
+ #
+-interface(`corenet_sendrecv_osapi_compute_server_packets',`
+-	corenet_send_osapi_compute_server_packets($1)
+-	corenet_receive_osapi_compute_server_packets($1)
++interface(`corenet_sendrecv_ovsdb_server_packets',`
++	corenet_send_ovsdb_server_packets($1)
++	corenet_receive_ovsdb_server_packets($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Do not audit attempts to send and receive osapi_compute_server packets.
++##	Do not audit attempts to send and receive ovsdb_server packets.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77896,14 +79336,14 @@
+ ## </param>
+ ## <infoflow type="none"/>
+ #
+-interface(`corenet_dontaudit_sendrecv_osapi_compute_server_packets',`
+-	corenet_dontaudit_send_osapi_compute_server_packets($1)
+-	corenet_dontaudit_receive_osapi_compute_server_packets($1)
++interface(`corenet_dontaudit_sendrecv_ovsdb_server_packets',`
++	corenet_dontaudit_send_ovsdb_server_packets($1)
++	corenet_dontaudit_receive_ovsdb_server_packets($1)
+ ')
+ 
+ ########################################
+ ## <summary>
+-##	Relabel packets to osapi_compute_server the packet type.
++##	Relabel packets to ovsdb_server the packet type.
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+@@ -77911,12 +79351,12 @@
+ ##	</summary>
+ ## </param>
+ #
+-interface(`corenet_relabelto_osapi_compute_server_packets',`
++interface(`corenet_relabelto_ovsdb_server_packets',`
+ 	gen_require(`
+-		type osapi_compute_server_packet_t;
++		type ovsdb_server_packet_t;
+ 	')
+ 
+-	allow $1 osapi_compute_server_packet_t:packet relabelto;
++	allow $1 ovsdb_server_packet_t:packet relabelto;
+ ')
+ 
+ 
+@@ -125440,6 +126880,486 @@
+ ')
+ 
+ 
++
++
++########################################
++## <summary>
++##	Send and receive TCP traffic on the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_tcp_sendrecv_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	allow $1 xodbc_connect_port_t:tcp_socket { send_msg recv_msg };
++')
++
++########################################
++## <summary>
++##	Send UDP traffic on the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_udp_send_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	allow $1 xodbc_connect_port_t:udp_socket send_msg;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send UDP traffic on the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_send_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	dontaudit $1 xodbc_connect_port_t:udp_socket send_msg;
++')
++
++########################################
++## <summary>
++##	Receive UDP traffic on the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_udp_receive_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	allow $1 xodbc_connect_port_t:udp_socket recv_msg;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive UDP traffic on the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_receive_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	dontaudit $1 xodbc_connect_port_t:udp_socket recv_msg;
++')
++
++########################################
++## <summary>
++##	Send and receive UDP traffic on the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_udp_sendrecv_xodbc_connect_port',`
++	corenet_udp_send_xodbc_connect_port($1)
++	corenet_udp_receive_xodbc_connect_port($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive
++##	UDP traffic on the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_sendrecv_xodbc_connect_port',`
++	corenet_dontaudit_udp_send_xodbc_connect_port($1)
++	corenet_dontaudit_udp_receive_xodbc_connect_port($1)
++')
++
++########################################
++## <summary>
++##	Bind TCP sockets to the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_tcp_bind_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	allow $1 xodbc_connect_port_t:tcp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Bind UDP sockets to the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_udp_bind_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	allow $1 xodbc_connect_port_t:udp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to sbind to xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_udp_bind_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	dontaudit $1 xodbc_connect_port_t:udp_socket name_bind;
++	
++')
++
++########################################
++## <summary>
++##	Make a TCP connection to the xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_tcp_connect_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	allow $1 xodbc_connect_port_t:tcp_socket name_connect;
++')
++########################################
++## <summary>
++##	Do not audit attempts to make a TCP connection to xodbc_connect port.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_dontaudit_tcp_connect_xodbc_connect_port',`
++	gen_require(`
++		type xodbc_connect_port_t;
++	')
++
++	dontaudit $1 xodbc_connect_port_t:tcp_socket name_connect;
++')
++
++
++########################################
++## <summary>
++##	Send xodbc_connect_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_send_xodbc_connect_client_packets',`
++	gen_require(`
++		type xodbc_connect_client_packet_t;
++	')
++
++	allow $1 xodbc_connect_client_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send xodbc_connect_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_send_xodbc_connect_client_packets',`
++	gen_require(`
++		type xodbc_connect_client_packet_t;
++	')
++
++	dontaudit $1 xodbc_connect_client_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Receive xodbc_connect_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_receive_xodbc_connect_client_packets',`
++	gen_require(`
++		type xodbc_connect_client_packet_t;
++	')
++
++	allow $1 xodbc_connect_client_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive xodbc_connect_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_receive_xodbc_connect_client_packets',`
++	gen_require(`
++		type xodbc_connect_client_packet_t;
++	')
++
++	dontaudit $1 xodbc_connect_client_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Send and receive xodbc_connect_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_sendrecv_xodbc_connect_client_packets',`
++	corenet_send_xodbc_connect_client_packets($1)
++	corenet_receive_xodbc_connect_client_packets($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive xodbc_connect_client packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_sendrecv_xodbc_connect_client_packets',`
++	corenet_dontaudit_send_xodbc_connect_client_packets($1)
++	corenet_dontaudit_receive_xodbc_connect_client_packets($1)
++')
++
++########################################
++## <summary>
++##	Relabel packets to xodbc_connect_client the packet type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_relabelto_xodbc_connect_client_packets',`
++	gen_require(`
++		type xodbc_connect_client_packet_t;
++	')
++
++	allow $1 xodbc_connect_client_packet_t:packet relabelto;
++')
++
++
++########################################
++## <summary>
++##	Send xodbc_connect_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="write" weight="10"/>
++#
++interface(`corenet_send_xodbc_connect_server_packets',`
++	gen_require(`
++		type xodbc_connect_server_packet_t;
++	')
++
++	allow $1 xodbc_connect_server_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send xodbc_connect_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_send_xodbc_connect_server_packets',`
++	gen_require(`
++		type xodbc_connect_server_packet_t;
++	')
++
++	dontaudit $1 xodbc_connect_server_packet_t:packet send;
++')
++
++########################################
++## <summary>
++##	Receive xodbc_connect_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="read" weight="10"/>
++#
++interface(`corenet_receive_xodbc_connect_server_packets',`
++	gen_require(`
++		type xodbc_connect_server_packet_t;
++	')
++
++	allow $1 xodbc_connect_server_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to receive xodbc_connect_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_receive_xodbc_connect_server_packets',`
++	gen_require(`
++		type xodbc_connect_server_packet_t;
++	')
++
++	dontaudit $1 xodbc_connect_server_packet_t:packet recv;
++')
++
++########################################
++## <summary>
++##	Send and receive xodbc_connect_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <infoflow type="both" weight="10"/>
++#
++interface(`corenet_sendrecv_xodbc_connect_server_packets',`
++	corenet_send_xodbc_connect_server_packets($1)
++	corenet_receive_xodbc_connect_server_packets($1)
++')
++
++########################################
++## <summary>
++##	Do not audit attempts to send and receive xodbc_connect_server packets.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++## <infoflow type="none"/>
++#
++interface(`corenet_dontaudit_sendrecv_xodbc_connect_server_packets',`
++	corenet_dontaudit_send_xodbc_connect_server_packets($1)
++	corenet_dontaudit_receive_xodbc_connect_server_packets($1)
++')
++
++########################################
++## <summary>
++##	Relabel packets to xodbc_connect_server the packet type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`corenet_relabelto_xodbc_connect_server_packets',`
++	gen_require(`
++		type xodbc_connect_server_packet_t;
++	')
++
++	allow $1 xodbc_connect_server_packet_t:packet relabelto;
++')
++
++
+ 
+ 
+ ########################################
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/kernel/devices.if centos-7.2.1511/usr/share/selinux/devel/include/kernel/devices.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/kernel/devices.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/kernel/devices.if	2015-11-20 17:07:58.000000000 +0100
+@@ -3468,6 +3468,25 @@
+ 
+ ########################################
+ ## <summary>
++##	Read the memory type range registers (MTRR).
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`dev_read_mtrr',`
++	gen_require(`
++		type device_t, mtrr_device_t;
++	')
++
++	read_files_pattern($1, device_t, mtrr_device_t)
++	read_chr_files_pattern($1, device_t, mtrr_device_t)
++')
++
++########################################
++## <summary>
+ ##	Read and write the memory type range registers (MTRR).
+ ## </summary>
+ ## <param name="domain">
+@@ -4469,6 +4488,24 @@
+ 
+ ########################################
+ ## <summary>
++##	Dontaudit attempts to mount a filesystem on /sys
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++#
++interface(`dev_dontaudit_mounton_sysfs',`
++	gen_require(`
++		type sysfs_t;
++	')
++
++	dontaudit $1 sysfs_t:dir mounton;
++')
++
++########################################
++## <summary>
+ ##	Mount sysfs filesystems.
+ ## </summary>
+ ## <param name="domain">
+@@ -4579,6 +4616,24 @@
+ 
+ ########################################
+ ## <summary>
++##	Access check for a sysfs directories.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`dev_access_check_sysfs',`
++	gen_require(`
++		type sysfs_t;
++	')
++
++	allow $1 sysfs_t:dir audit_access;
++')
++
++########################################
++## <summary>
+ ##	Do not audit attempts to write in a sysfs directory.
+ ## </summary>
+ ## <param name="domain">
+@@ -5527,6 +5582,24 @@
+ ')
+ 
+ ########################################
++## <summary>
++##	RW to watchdog devices.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`dev_rw_watchdog',`
++	gen_require(`
++		type device_t, watchdog_device_t;
++	')
++
++	rw_chr_files_pattern($1, device_t, watchdog_device_t)
++')
++
++########################################
+ ## <summary>
+ ##	Read and write the the wireless device.
+ ## </summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/kernel/files.if centos-7.2.1511/usr/share/selinux/devel/include/kernel/files.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/kernel/files.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/kernel/files.if	2015-11-20 17:07:58.000000000 +0100
+@@ -2145,6 +2145,7 @@
+ 	gen_require(`
+ 		attribute mountpoint;
+ 	')
++    dontaudit $1 self:capability  dac_override;
+ 
+ 	dontaudit $1 mountpoint:dir write;
+ ')
+@@ -4827,6 +4828,12 @@
+ 	allow $1 modules_object_t:dir list_dir_perms;
+ 	read_files_pattern($1, modules_object_t, modules_object_t)
+ 	read_lnk_files_pattern($1, modules_object_t, modules_object_t)
++
++    # FIXME:
++    # needed for already labeled module deps by modules_dep_t
++    optional_policy(`
++        modutils_read_module_deps_files($1)
++    ')
+ ')
+ 
+ ########################################
+@@ -7400,6 +7407,24 @@
+ 
+ ########################################
+ ## <summary>
++##	Allow search the all /var/run directory.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++#
++interface(`files_search_all_pids',`
++	gen_require(`
++		attribute pidfile;
++	')
++
++	allow $1 pidfile:dir search_dir_perms;
++')
++
++########################################
++## <summary>
+ ##	List the contents of the runtime process
+ ##	ID directories (/var/run).
+ ## </summary>
+@@ -7808,6 +7833,25 @@
+ ')
+ 
+ ########################################
++## <summary>
++##	Write all sockets
++##	in the /var/run directory.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`files_write_all_pid_sockets',`
++	gen_require(`
++		attribute pidfile;
++	')
++
++	allow $1 pidfile:sock_file write_sock_file_perms;
++')
++
++########################################
+ ## <summary>
+ ##	manage all pidfiles 
+ ##	in the /var/run directory.
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/kernel/filesystem.if centos-7.2.1511/usr/share/selinux/devel/include/kernel/filesystem.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/kernel/filesystem.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/kernel/filesystem.if	2015-11-20 17:07:58.000000000 +0100
+@@ -1685,6 +1685,44 @@
+ 	domain_entry_file($1, cifs_t)
+ ')
+ 
++########################################
++## <summary>
++##	Make general progams in CIFS an entrypoint for
++##	the specified domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	The domain for which cifs_t is an entrypoint.
++##	</summary>
++## </param>
++#
++interface(`fs_cifs_entrypoint',`
++	gen_require(`
++		type cifs_t;
++	')
++
++    allow $1 cifs_t:file entrypoint;
++')
++
++#######################################
++## <summary>
++##	dontaudit write dirs
++##	on a configfs filesystem.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`fs_dontaudit_write_configfs_dirs',`
++	gen_require(`
++		type configfs_t;
++	')
++
++	dontaudit $1 configfs_t:dir write;
++')
++
+ #######################################
+ ## <summary>
+ ##	Create, read, write, and delete dirs
+@@ -2326,6 +2364,44 @@
+ 
+ ########################################
+ ## <summary>
++##	Make general progams in FUSEFS an entrypoint for
++##	the specified domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	The domain for which fusefs_t is an entrypoint.
++##	</summary>
++## </param>
++#
++interface(`fs_fusefs_entry_type',`
++	gen_require(`
++		type fusefs_t;
++	')
++
++	domain_entry_file($1, fusefs_t)
++')
++
++########################################
++## <summary>
++##	Make general progams in FUSEFS an entrypoint for
++##	the specified domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	The domain for which fusefs_t is an entrypoint.
++##	</summary>
++## </param>
++#
++interface(`fs_fusefs_entrypoint',`
++	gen_require(`
++		type fusefs_t;
++	')
++
++    allow $1 fusefs_t:file entrypoint;
++')
++
++########################################
++## <summary>
+ ##	Create, read, write, and delete files
+ ##	on a FUSEFS filesystem.
+ ## </summary>
+@@ -2877,6 +2953,24 @@
+ 
+ ########################################
+ ## <summary>
++##	Set the attributes of nfs directories.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`fs_setattr_nfs_dirs',`
++	gen_require(`
++		type nfs_t;
++	')
++
++	allow $1 nfs_t:dir setattr;
++')
++
++########################################
++## <summary>
+ ##	Search directories on a NFS filesystem.
+ ## </summary>
+ ## <param name="domain">
+@@ -3049,6 +3143,25 @@
+ 
+ ########################################
+ ## <summary>
++##	Make general progams in NFS an entrypoint for
++##	the specified domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	The domain for which nfs_t is an entrypoint.
++##	</summary>
++## </param>
++#
++interface(`fs_nfs_entrypoint',`
++	gen_require(`
++		type nfs_t;
++	')
++
++    allow $1 nfs_t:file entrypoint;
++')
++
++########################################
++## <summary>
+ ##	Append files
+ ##	on a NFS filesystem.
+ ## </summary>
+@@ -4412,6 +4525,24 @@
+ ')
+ 
+ ########################################
++## <summary>
++##	Dontaudit remount a tmpfs filesystem.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++#
++interface(`fs_dontaudit_remount_tmpfs',`
++	gen_require(`
++		type tmpfs_t;
++	')
++
++	dontaudit $1 tmpfs_t:filesystem remount;
++')
++
++########################################
+ ## <summary>
+ ##	Remount a tmpfs filesystem.
+ ## </summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/kernel/kernel.if centos-7.2.1511/usr/share/selinux/devel/include/kernel/kernel.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/kernel/kernel.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/kernel/kernel.if	2015-11-20 17:07:58.000000000 +0100
+@@ -913,6 +913,25 @@
+ 
+ ########################################
+ ## <summary>
++##	Do not audit attempts to set the
++##	attributes of files in /proc.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++#
++interface(`kernel_dontaudit_setattr_proc_files',`
++	gen_require(`
++		type proc_t;
++	')
++
++	dontaudit $1 proc_t:file setattr;
++')
++
++########################################
++## <summary>
+ ##	Search directories in /proc.
+ ## </summary>
+ ## <param name="domain">
+@@ -3619,12 +3638,14 @@
+ interface(`kernel_read_security_state',`
+ 	gen_require(`
+ 		type proc_t, proc_security_t;
++        attribute sysctl_type;
+ 	')
+ 
+ 	read_files_pattern($1, { proc_t proc_security_t }, proc_security_t)
+ 	read_lnk_files_pattern($1, { proc_t proc_security_t }, proc_security_t)
+ 
+ 	list_dirs_pattern($1, proc_t, proc_security_t)
++    allow $1 sysctl_type:dir search_dir_perms;
+ ')
+ 
+ ########################################
+@@ -3823,3 +3844,66 @@
+ 
+ 	allow $1 usermodehelper_t:file relabelto;
+ ')
++
++########################################
++## <summary>
++##      Read netlink audit socket
++## </summary>
++## <param name="domain">
++##      <summary>
++##      Domain allowed access.
++##      </summary>
++## </param>
++#
++interface(`kernel_read_netlink_audit_socket',`
++	gen_require(`
++		type kernel_t;
++	')
++
++	allow $1 kernel_t:netlink_audit_socket r_netlink_socket_perms;
++')
++
++########################################
++## <summary>
++##	Execute an unlabeled file in the specified domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed to transition.
++##	</summary>
++## </param>
++## <param name="target_domain">
++##	<summary>
++##	The type of the new process.
++##	</summary>
++## </param>
++#
++interface(`kernel_unlabeled_domtrans',`
++	gen_require(`
++		type unlabeled_t;
++	')
++
++	read_lnk_files_pattern($1, unlabeled_t, unlabeled_t)
++	domain_transition_pattern($1, unlabeled_t, $2)
++	type_transition $1 unlabeled_t:process $2;
++')
++
++########################################
++## <summary>
++##	Make general progams without labeles an entrypoint for
++##	the specified domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	The domain for which unlabeled_t is an entrypoint.
++##	</summary>
++## </param>
++#
++interface(`kernel_unlabeled_entry_type',`
++	gen_require(`
++		type unlabeled_t;
++	')
++
++	domain_entry_file($1, unlabeled_t)
++')
++
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/kernel/selinux.if centos-7.2.1511/usr/share/selinux/devel/include/kernel/selinux.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/kernel/selinux.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/kernel/selinux.if	2015-11-20 17:07:58.000000000 +0100
+@@ -237,6 +237,10 @@
+ 	dev_search_sysfs($1)
+ 	allow $1 security_t:lnk_file read_lnk_file_perms;
+ 	allow $1 security_t:dir search_dir_perms;
++
++    optional_policy(`
++        seutil_search_config($1)
++    ')
+ ')
+ 
+ ########################################
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/kernel/storage.if centos-7.2.1511/usr/share/selinux/devel/include/kernel/storage.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/kernel/storage.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/kernel/storage.if	2015-11-20 17:07:58.000000000 +0100
+@@ -361,6 +361,25 @@
+ 
+ ########################################
+ ## <summary>
++##	Create block devices in on a tmp filesystem with the
++##	fixed disk type via an automatic type transition.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`storage_tmp_filetrans_fixed_disk',`
++	gen_require(`
++		type fixed_disk_device_t;
++	')
++
++	files_tmp_filetrans($1, fixed_disk_device_t, blk_file)
++')
++
++########################################
++## <summary>
+ ##	Relabel fixed disk device nodes.
+ ## </summary>
+ ## <param name="domain">
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/kernel/terminal.if centos-7.2.1511/usr/share/selinux/devel/include/kernel/terminal.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/kernel/terminal.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/kernel/terminal.if	2015-11-20 17:07:58.000000000 +0100
+@@ -1184,6 +1184,28 @@
+ 
+ ########################################
+ ## <summary>
++##	Allow open access for all unallocated
++##	tty device nodes.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`term_open_unallocated_ttys',`
++	gen_require(`
++		type tty_device_t;
++	')
++
++	dev_list_all_dev_nodes($1)
++	allow $1 tty_device_t:chr_file open;
++')
++
++
++
++########################################
++## <summary>
+ ##	Do not audit attempts to get the attributes
+ ##	of all unallocated tty device nodes.
+ ## </summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/roles/unconfineduser.if centos-7.2.1511/usr/share/selinux/devel/include/roles/unconfineduser.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/roles/unconfineduser.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/roles/unconfineduser.if	2015-11-20 17:07:58.000000000 +0100
+@@ -459,6 +459,24 @@
+ 
+ ########################################
+ ## <summary>
++##	Dontaudit write process information for unconfined process.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`unconfined_dontaudit_write_state',`
++	gen_require(`
++		type unconfined_t;
++	')
++
++	dontaudit $1 unconfined_t:file write;
++')
++
++########################################
++## <summary>
+ ##	Write keys for the unconfined domain.
+ ## </summary>
+ ## <param name="domain">
+@@ -573,7 +591,7 @@
+ 
+ ########################################
+ ## <summary>
+-##	Allow apps to set rlimits on userdomain
++##	Allow apps to set rlimits on unconfined user
+ ## </summary>
+ ## <param name="domain">
+ ##	<summary>
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/fstools.if centos-7.2.1511/usr/share/selinux/devel/include/system/fstools.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/fstools.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/fstools.if	2015-11-20 17:07:58.000000000 +0100
+@@ -173,5 +173,23 @@
+ 	files_search_pids($1)
+ 	manage_dirs_pattern($1, fsadm_var_run_t, fsadm_var_run_t)
+ 	manage_files_pattern($1, fsadm_var_run_t, fsadm_var_run_t)
++    fstools_filetrans_named_content_fsadm($1)
++')
++
++########################################
++## <summary>
++##	Transition to systemd  content
++## </summary>
++## <param name="domain">
++##	<summary>
++##      Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`fstools_filetrans_named_content_fsadm',`
++	gen_require(`
++		type fsadm_var_run_t;
++	')
++
+ 	files_pid_filetrans($1, fsadm_var_run_t, dir, "blkid")
+ ')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/init.if centos-7.2.1511/usr/share/selinux/devel/include/system/init.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/init.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/init.if	2015-11-20 17:07:58.000000000 +0100
+@@ -2602,7 +2602,7 @@
+         type init_t;
+     ')
+ 
+-    allow $1 init_t:tcp_socket { read write };
++    allow $1 init_t:tcp_socket { read write getattr getopt setopt };
+ ')
+ 
+ ########################################
+@@ -2850,3 +2850,22 @@
+ 	init_pid_filetrans($1, systemd_unit_file_t, dir, "generator")
+ 	init_pid_filetrans($1, systemd_unit_file_t, dir, "system")
+ ')
++
++########################################
++## <summary>
++##	Read systemd lib files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`init_read_var_lib_files',`
++	gen_require(`
++		type init_var_lib_t;
++	')
++
++	files_search_var_lib($1)
++	read_files_pattern($1, init_var_lib_t, init_var_lib_t)
++')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/ipsec.if centos-7.2.1511/usr/share/selinux/devel/include/system/ipsec.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/ipsec.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/ipsec.if	2015-11-20 17:07:58.000000000 +0100
+@@ -541,3 +541,22 @@
+ 
+     ps_process_pattern($1, ipsec_mgmt_t)
+ ')
++
++########################################
++## <summary>
++##	Do not audit attempts to write the ipsec
++##	log files.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain to not audit.
++##	</summary>
++## </param>
++#
++interface(`ipsec_dontaudit_write_log',`
++	gen_require(`
++		type ipsec_log_t;
++	')
++
++	dontaudit $1 ipsec_log_t:file rw_inherited_file_perms;
++')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/iptables.if centos-7.2.1511/usr/share/selinux/devel/include/system/iptables.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/iptables.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/iptables.if	2015-11-20 17:07:58.000000000 +0100
+@@ -183,3 +183,21 @@
+ 	files_search_etc($1)
+ 	manage_files_pattern($1, iptables_conf_t, iptables_conf_t)
+ ')
++
++########################################
++## <summary>
++##	Transition to iptables named content
++## </summary>
++## <param name="domain">
++##	<summary>
++##      Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`iptables_filetrans_named_content',`
++	gen_require(`
++		type iptables_var_run_t;
++	')
++
++	files_pid_filetrans($1, iptables_var_run_t, file, "xtables.lock")
++')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/logging.if centos-7.2.1511/usr/share/selinux/devel/include/system/logging.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/logging.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/logging.if	2015-11-20 17:07:58.000000000 +0100
+@@ -616,6 +616,7 @@
+ 	allow $1 devlog_t:sock_file manage_sock_file_perms;
+ 	dev_filetrans($1, devlog_t, sock_file)
+ 	init_pid_filetrans($1, devlog_t, sock_file, "syslog")
++    logging_syslogd_pid_filetrans($1, devlog_t, sock_file, "dev-log")
+ ')
+ 
+ ########################################
+@@ -1450,3 +1451,39 @@
+ 
+     logging_log_filetrans($1, var_log_t, dir, "anaconda")
+ ')
++
++#######################################
++## <summary>
++##	Create objects in /run/systemd/journal/ directory
++##	with an automatic type transition to
++##	a specified private type.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++## <param name="private_type">
++##	<summary>
++##	The type of the object to create.
++##	</summary>
++## </param>
++## <param name="object_class">
++##	<summary>
++##	The class of the object to be created.
++##	</summary>
++## </param>
++## <param name="name" optional="true">
++##	<summary>
++##	The name of the object being created.
++##	</summary>
++## </param>
++#
++interface(`logging_syslogd_pid_filetrans',`
++	gen_require(`
++		type syslogd_var_run_t;
++	')
++
++	files_search_pids($1)
++	filetrans_pattern($1, syslogd_var_run_t, $2, $3, $4)
++')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/lvm.if centos-7.2.1511/usr/share/selinux/devel/include/system/lvm.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/lvm.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/lvm.if	2015-11-20 17:07:58.000000000 +0100
+@@ -149,6 +149,25 @@
+ 	manage_files_pattern($1, lvm_etc_t, lvm_etc_t)
+ ')
+ 
++########################################
++## <summary>
++##	Connect to lvm using a unix domain stream socket.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`lvm_stream_connect',`
++	gen_require(`
++		type lvm_t, lvm_var_run_t;
++	')
++
++	files_search_pids($1)
++	stream_connect_pattern($1, lvm_var_run_t, lvm_var_run_t, lvm_t)
++')
++
+ ######################################
+ ## <summary>
+ ##	Execute a domain transition to run clvmd.
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/modutils.if centos-7.2.1511/usr/share/selinux/devel/include/system/modutils.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/modutils.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/modutils.if	2015-11-20 17:07:58.000000000 +0100
+@@ -17,6 +17,23 @@
+ 
+ 	getattr_files_pattern($1, modules_object_t, modules_dep_t)
+ ')
++########################################
++## <summary>
++##	Read the dependencies of kernel modules.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`modutils_read_module_deps_files',`
++	gen_require(`
++		type modules_dep_t;
++	')
++
++	allow $1 modules_dep_t:file read_file_perms;
++')
+ 
+ ########################################
+ ## <summary>
+@@ -34,6 +51,7 @@
+ 	')
+ 
+ 	files_list_kernel_modules($1)
++    files_read_kernel_modules($1)
+ 	allow $1 modules_dep_t:file read_file_perms;
+ ')
+ 
+@@ -433,6 +451,20 @@
+ 
+ 	files_etc_filetrans($1, modules_conf_t, file, "modprobe.conf")
+ 	files_etc_filetrans($1, modules_conf_t, file, "modules.conf")
+-	files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.dep")
+-	files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.dep.bin")
++
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.alias")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.alias.bin")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.block")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.builtin")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.builtin.bin")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.dep")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.dep.bin")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.devname")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.drm")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.modesetting")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.networking")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.order")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.softdep")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.symbols")
++	#files_kernel_modules_filetrans($1, modules_dep_t, file, "modules.symbols.bin")
+ ')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/mount.if centos-7.2.1511/usr/share/selinux/devel/include/system/mount.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/mount.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/mount.if	2015-11-20 17:07:58.000000000 +0100
+@@ -424,3 +424,24 @@
+     role $2 types unconfined_mount_t;
+ ')
+ 
++########################################
++## <summary>
++##	Allow mount programs to be an entrypoint for
++##	the specified domain.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	The domain for which mount programs is an entrypoint.
++##	</summary>
++## </param>
++#
++interface(`mount_entry_type',`
++	gen_require(`
++		type mount_ecryptfs_exec_t;
++		type mount_exec_t;
++	')
++
++	domain_entry_file($1, mount_ecryptfs_exec_t)
++	domain_entry_file($1, mount_exec_t)
++')
++
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/selinuxutil.if centos-7.2.1511/usr/share/selinux/devel/include/system/selinuxutil.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/selinuxutil.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/selinuxutil.if	2015-11-20 17:07:58.000000000 +0100
+@@ -742,6 +742,25 @@
+ 
+ ########################################
+ ## <summary>
++##	Allow attempts to search the SELinux
++##	configuration directory (/etc/selinux).
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`seutil_search_config',`
++	gen_require(`
++		type selinux_config_t;
++	')
++
++	allow $1 selinux_config_t:dir search_dir_perms;
++')
++
++########################################
++## <summary>
+ ##	Do not audit attempts to read the SELinux
+ ##	userland configuration (/etc/selinux).
+ ## </summary>
+@@ -1425,6 +1444,26 @@
+ 
+ ########################################
+ ## <summary>
++##	List of the semanage
++##	module store.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`seutil_access_check_module_store',`
++	gen_require(`
++		type semanage_store_t;
++	')
++
++	files_search_etc($1)
++    allow $1 semanage_store_t:dir_file_class_set audit_access;
++')
++
++########################################
++## <summary>
+ ##	Full management of the semanage
+ ##	module store.
+ ## </summary>
+@@ -1626,7 +1665,6 @@
+ 	mls_file_read_all_levels($1)
+ 
+ 	selinux_get_enforce_mode($1)
+-    selinux_set_enforce_mode($1)
+ 
+ 	seutil_manage_bin_policy($1)
+ 
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/sysnetwork.if centos-7.2.1511/usr/share/selinux/devel/include/system/sysnetwork.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/sysnetwork.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/sysnetwork.if	2015-11-20 17:07:58.000000000 +0100
+@@ -450,7 +450,7 @@
+ 	')
+ 
+ 	ifdef(`distro_redhat',`
+-        files_search_pids($1)
++        files_search_all_pids($1)
+         init_search_pid_dirs($1)
+ 		allow $1 net_conf_t:dir list_dir_perms;
+ 		allow $1 net_conf_t:lnk_file read_lnk_file_perms;
+@@ -536,6 +536,8 @@
+ 	')
+ 
+ 	files_etc_filetrans($1, net_conf_t, file, $2)
++	files_etc_filetrans($1, net_conf_t, lnk_file, $2)
++
+ ')
+ 
+ ########################################
+@@ -585,7 +587,7 @@
+ interface(`sysnet_manage_config',`
+ 	gen_require(`
+ 		type net_conf_t;
+-	')
++        ')
+ 
+ 	allow $1 net_conf_t:file manage_file_perms;
+ 
+@@ -595,10 +597,11 @@
+ 	')
+ 
+ 	ifdef(`distro_redhat',`
+-        files_search_pids($1)
++        files_search_all_pids($1)
+         init_search_pid_dirs($1)
+ 		allow $1 net_conf_t:dir list_dir_perms;
+ 		manage_files_pattern($1, net_conf_t, net_conf_t)
++		manage_lnk_files_pattern($1, net_conf_t, net_conf_t)
+ 	')
+ ')
+ 
+@@ -625,7 +628,7 @@
+ 	')
+ 
+ 	ifdef(`distro_redhat',`
+-        files_search_pids($1)
++        files_search_all_pids($1)
+         init_search_pid_dirs($1)
+ 		allow $1 net_conf_t:dir list_dir_perms;
+ 		manage_dirs_pattern($1, net_conf_t, net_conf_t)
+@@ -672,6 +675,25 @@
+ 
+ #######################################
+ ## <summary>
++##  Manage the dhcp client pid file.
++## </summary>
++## <param name="domain">
++##  <summary>
++##  Domain allowed access.  
++##  </summary>
++## </param>
++#
++interface(`sysnet_manage_dhcpc_pid',`
++    gen_require(`
++        type dhcpc_var_run_t;
++    ')
++
++    files_rw_pid_dirs($1)
++    manage_files_pattern($1, dhcpc_var_run_t, dhcpc_var_run_t)
++')
++
++#######################################
++## <summary>
+ ##	Execute ifconfig in the ifconfig domain.
+ ## </summary>
+ ## <param name="domain">
+@@ -924,9 +946,11 @@
+ 	corenet_tcp_sendrecv_dns_port($1)
+ 	corenet_udp_sendrecv_dns_port($1)
+ 	corenet_tcp_connect_dns_port($1)
+-    corenet_tcp_connect_dnssec_port($1)
++	corenet_tcp_connect_dnssec_port($1)
+ 	corenet_sendrecv_dns_client_packets($1)
+ 
++	files_search_all_pids($1)
++
+ 	miscfiles_read_generic_certs($1)
+ 
+ 	sysnet_read_config($1)
+@@ -1071,13 +1095,23 @@
+ 	files_etc_filetrans($1, net_conf_t, file, "resolv.conf.tmp")
+ 	files_etc_filetrans($1, net_conf_t, file, "resolv.conf.fp-tmp")
+ 	files_etc_filetrans($1, net_conf_t, file, "resolv.conf.fp-saved")
++	files_etc_filetrans($1, net_conf_t, file, "resolv-secure.conf")
++	files_etc_filetrans($1, net_conf_t, file, ".resolv.conf.dnssec-trigger")
++	files_etc_filetrans($1, net_conf_t, file, ".resolv-secure.conf.dnssec-trigger")
++	files_etc_filetrans($1, net_conf_t, lnk_file, ".resolv.conf")
++	files_etc_filetrans($1, net_conf_t, lnk_file, ".resolv.conf.NetworkManager")
+ 	files_etc_filetrans($1, net_conf_t, file, "denyhosts")
+ 	files_etc_filetrans($1, net_conf_t, file, "hosts")
+ 	files_etc_filetrans($1, net_conf_t, file, "hosts.deny")
+ 	files_etc_filetrans($1, net_conf_t, file, "ethers")
+ 	files_etc_filetrans($1, net_conf_t, file, "yp.conf")
+ 	files_etc_filetrans($1, net_conf_t, file, "ntp.conf")
+-    init_pid_filetrans($1, net_conf_t, dir, "network") 
++	init_pid_filetrans($1, net_conf_t, dir, "network")
++
++	optional_policy(`
++	    networkmanager_pid_filetrans($1, net_conf_t, file, "resolv.conf")
++	    networkmanager_pid_filetrans($1, net_conf_t, file, "resolv.conf.tmp")
++    ')
+ ')
+ 
+ ########################################
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/systemd.if centos-7.2.1511/usr/share/selinux/devel/include/system/systemd.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/systemd.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/systemd.if	2015-11-20 17:07:58.000000000 +0100
+@@ -431,6 +431,43 @@
+ 
+ #######################################
+ ## <summary>
++##  Execute a domain transition to run systemd-sysctl.
++## </summary>
++## <param name="domain">
++## <summary>
++##  Domain allowed access.
++## </summary>
++## </param>
++#
++interface(`systemd_domtrans_sysctl',`
++    gen_require(`
++        type systemd_sysctl_t, systemd_sysctl_exec_t;
++    ')
++
++    domtrans_pattern($1, systemd_sysctl_exec_t, systemd_sysctl_t)
++')
++
++#######################################
++## <summary>
++##  Allow a domain to execute systemd-sysctl in the caller domain.
++## </summary>
++## <param name="domain">
++## <summary>
++##  Domain allowed access.
++## </summary>
++## </param>
++#
++interface(`systemd_exec_sysctl',`
++    gen_require(`
++        type systemd_sysctl_exec_t;
++    ')
++
++    can_exec($1,systemd_sysctl_exec_t)
++
++')
++
++#######################################
++## <summary>
+ ##  Execute a domain transition to run systemd-tmpfiles.
+ ## </summary>
+ ## <param name="domain">
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/unconfined.if centos-7.2.1511/usr/share/selinux/devel/include/system/unconfined.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/unconfined.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/unconfined.if	2015-11-20 17:07:58.000000000 +0100
+@@ -245,3 +245,21 @@
+         allow $1 unconfined_service_t:dbus send_msg;
+         allow unconfined_service_t $1:dbus send_msg;
+ ')
++
++########################################
++## <summary>
++##	Send signull to unconfined_service_t.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`unconfined_server_signull',`
++	gen_require(`
++		type unconfined_service_t;
++	')
++
++	allow $1 unconfined_service_t:process signull;
++')
+diff -ru centos-7.1.1503/usr/share/selinux/devel/include/system/userdomain.if centos-7.2.1511/usr/share/selinux/devel/include/system/userdomain.if
+--- centos-7.1.1503/usr/share/selinux/devel/include/system/userdomain.if	2015-03-06 06:53:47.000000000 +0100
++++ centos-7.2.1511/usr/share/selinux/devel/include/system/userdomain.if	2015-11-20 17:07:58.000000000 +0100
+@@ -169,6 +169,7 @@
+ 	
+ 	optional_policy(`
+ 		ssh_rw_stream_sockets($1_usertype)
++        ssh_rw_dgram_sockets($1_usertype)
+ 		ssh_delete_tmp($1_t)
+ 		ssh_signal($1_t)
+ 	')
+@@ -718,8 +719,8 @@
+ 	application_getattr_socket($1_usertype)
+ 
+ 
+-    ifdef(`enabled_mls',`
+-        init_rw_tcp_sockets($1_usertype)
++    ifdef(`enable_mls',`
++        init_rw_tcp_sockets($1_t)
+     ')
+ 
+ 	logging_send_syslog_msg($1_t)
+@@ -1102,10 +1103,13 @@
+ 		oddjob_run_mkhomedir($1_t, $1_r)
+ 	')
+ 
++    optional_policy(`
++        ipa_run_helper($1_t, $1_r)
++    ')
++
+ 	optional_policy(`
+ 		wine_filetrans_named_content($1_usertype)
+ 	')
+-
+ ')
+ 
+ #######################################
+@@ -1532,6 +1536,7 @@
+ 	kernel_signull_unlabeled($1_t)
+ 	kernel_sigchld_unlabeled($1_t)
+ 	kernel_signal($1_t)
++    kernel_stream_connect($1_t)
+ 
+ 	corenet_tcp_bind_generic_port($1_t)
+ 	# allow setting up tunnels
+@@ -2155,7 +2160,6 @@
+ 	allow $1 user_home_dir_t:dir relabelto;
+ ')
+ 
+-
+ ########################################
+ ## <summary>
+ ##	Relabel to user home files.
+@@ -2193,6 +2197,24 @@
+ 
+ ########################################
+ ## <summary>
++##	Relabel user home directories.
++## </summary>
++## <param name="domain">
++##	<summary>
++##	Domain allowed access.
++##	</summary>
++## </param>
++#
++interface(`userdom_relabel_user_home_dirs',`
++	gen_require(`
++		type user_home_dir_t;
++	')
++
++	allow $1 user_home_t:dir relabel_file_perms;
++')
++
++########################################
++## <summary>
+ ##	Create directories in the home dir root with
+ ##	the user home directory type.
+ ## </summary>
+@@ -2266,10 +2288,10 @@
+ #
+ interface(`userdom_dontaudit_search_user_home_content',`
+ 	gen_require(`
+-		type user_home_t;
++		attribute user_home_type;
+ 	')
+ 
+-	dontaudit $1 user_home_t:dir search_dir_perms;
++	dontaudit $1 user_home_type:dir search_dir_perms;
+ 	fs_dontaudit_list_nfs($1)
+ 	fs_dontaudit_list_cifs($1)
+ ')
+@@ -5313,12 +5335,13 @@
+         ')
+ 
+     userdom_search_user_home_dirs($1)
+-	userdom_user_home_dir_filetrans($1, texlive_home_t, dir, ".texlive2012")
+-	userdom_user_home_dir_filetrans($1, texlive_home_t, dir, ".texlive2013")
+-	userdom_user_home_dir_filetrans($1, texlive_home_t, dir, ".texlive2014")
++    userdom_user_home_dir_filetrans($1, texlive_home_t, dir, ".texlive2012")
++    userdom_user_home_dir_filetrans($1, texlive_home_t, dir, ".texlive2013")
++    userdom_user_home_dir_filetrans($1, texlive_home_t, dir, ".texlive2014")
+     manage_dirs_pattern($1, texlive_home_t, texlive_home_t)
+     manage_files_pattern($1, texlive_home_t, texlive_home_t)
+-	manage_lnk_files_pattern($1, texlive_home_t, texlive_home_t)
++    manage_lnk_files_pattern($1, texlive_home_t, texlive_home_t)
++    allow $1 texlive_home_t:file relabelfrom;
+ ')
+ 
+ ########################################
+@@ -6053,6 +6076,10 @@
+     userdom_user_home_dir_filetrans($1, home_cert_t, dir, "certificates")
+     userdom_user_home_dir_filetrans($1, user_tmp_t, dir, "tmp")
+     userdom_user_home_dir_filetrans($1, user_tmp_t, dir, ".tmp")
++
++    optional_policy(`
++        gnome_data_filetrans($1, home_cert_t, dir, "certificates")
++    ')
+ ')
+ 
+ ########################################

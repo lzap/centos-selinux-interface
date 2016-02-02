@@ -1,0 +1,51 @@
+<summary>Policy modules for applications</summary>
+<module name="seunshare" filename="policy/modules/apps/seunshare.if">
+<summary>Filesystem namespacing/polyinstantiation application.</summary>
+<interface name="seunshare_domtrans" lineno="13">
+<summary>
+Execute a domain transition to run seunshare.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="seunshare_run" lineno="37">
+<summary>
+Execute seunshare in the seunshare domain, and
+allow the specified role the seunshare domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+</interface>
+<interface name="seunshare_role_template" lineno="69">
+<summary>
+The role template for the seunshare module.
+</summary>
+<param name="role_prefix">
+<summary>
+The prefix of the user role (e.g., user
+is the prefix for user_r).
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<param name="domain">
+<summary>
+User domain for the role.
+</summary>
+</param>
+</interface>
+</module>

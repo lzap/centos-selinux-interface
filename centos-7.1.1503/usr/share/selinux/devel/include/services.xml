@@ -1,0 +1,1925 @@
+<summary>
+	Policy modules for system services, like cron, and network services,
+	like sshd.
+</summary>
+<module name="postgresql" filename="policy/modules/services/postgresql.if">
+<summary>PostgreSQL relational database</summary>
+<interface name="postgresql_role" lineno="18">
+<summary>
+Role access for SE-PostgreSQL.
+</summary>
+<param name="user_role">
+<summary>
+The role associated with the user domain.
+</summary>
+</param>
+<param name="user_domain">
+<summary>
+The type of the user domain.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_loadable_module" lineno="40">
+<summary>
+Marks as a SE-PostgreSQL loadable shared library module
+</summary>
+<param name="type">
+<summary>
+Type marked as a database object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_database_object" lineno="58">
+<summary>
+Marks as a SE-PostgreSQL database object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a database object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_schema_object" lineno="76">
+<summary>
+Marks as a SE-PostgreSQL schema object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a schema object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_table_object" lineno="94">
+<summary>
+Marks as a SE-PostgreSQL table/column/tuple object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a table/column/tuple object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_system_table_object" lineno="112">
+<summary>
+Marks as a SE-PostgreSQL system table/column/tuple object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a table/column/tuple object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_sequence_object" lineno="131">
+<summary>
+Marks as a SE-PostgreSQL sequence type
+</summary>
+<param name="type">
+<summary>
+Type marked as a sequence type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_view_object" lineno="149">
+<summary>
+Marks as a SE-PostgreSQL view object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a view object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_procedure_object" lineno="167">
+<summary>
+Marks as a SE-PostgreSQL procedure object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a procedure object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_trusted_procedure_object" lineno="185">
+<summary>
+Marks as a SE-PostgreSQL trusted procedure object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a trusted procedure object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_language_object" lineno="205">
+<summary>
+Marks as a SE-PostgreSQL procedural language object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a procedural language object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_blob_object" lineno="223">
+<summary>
+Marks as a SE-PostgreSQL binary large object type
+</summary>
+<param name="type">
+<summary>
+Type marked as a database binary large object type.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_search_db" lineno="241">
+<summary>
+Allow the specified domain to search postgresql's database directory.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_manage_db" lineno="259">
+<summary>
+Allow the specified domain to manage postgresql's database.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_domtrans" lineno="280">
+<summary>
+Execute postgresql in the postgresql domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_exec" lineno="298">
+<summary>
+Execute Postgresql in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_signal" lineno="316">
+<summary>
+Allow domain to signal postgresql
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_read_config" lineno="334">
+<summary>
+Allow the specified domain to read postgresql's etc.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="postgresql_tcp_connect" lineno="355">
+<summary>
+Allow the specified domain to connect to postgresql with a tcp socket.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_stream_connect" lineno="376">
+<summary>
+Allow the specified domain to connect to postgresql with a unix socket.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_unpriv_client" lineno="399">
+<summary>
+Allow the specified domain unprivileged accesses to unifined database objects
+managed by SE-PostgreSQL,
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_unconfined" lineno="418">
+<summary>
+Allow the specified domain unconfined accesses to any database objects
+managed by SE-PostgreSQL,
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_filetrans_named_content" lineno="436">
+<summary>
+Transition to postgresql named content
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="postgresql_admin" lineno="465">
+<summary>
+All of the rules required to administrate an postgresql environment
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<param name="role">
+<summary>
+The role to be allowed to manage the postgresql domain.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<tunable name="postgresql_can_rsync" dftval="false">
+<desc>
+<p>
+Allow postgresql to use ssh and rsync for point-in-time recovery
+</p>
+</desc>
+</tunable>
+<tunable name="postgresql_selinux_users_ddl" dftval="true">
+<desc>
+<p>
+Allow unprivileged users to execute DDL statement
+</p>
+</desc>
+</tunable>
+<tunable name="postgresql_selinux_transmit_client_label" dftval="false">
+<desc>
+<p>
+Allow transmit client label to foreign database
+</p>
+</desc>
+</tunable>
+<tunable name="postgresql_selinux_unconfined_dbadm" dftval="true">
+<desc>
+<p>
+Allow database admins to execute DML statement
+</p>
+</desc>
+</tunable>
+</module>
+<module name="ssh" filename="policy/modules/services/ssh.if">
+<summary>Secure shell client and server policy.</summary>
+<template name="ssh_basic_client_template" lineno="34">
+<summary>
+Basic SSH client template.
+</summary>
+<desc>
+<p>
+This template creates a derived domains which are used
+for ssh client sessions.  A derived
+type is also created to protect the user ssh keys.
+</p>
+<p>
+This template was added for NX.
+</p>
+</desc>
+<param name="userdomain_prefix">
+<summary>
+The prefix of the domain (e.g., user
+is the prefix for user_t).
+</summary>
+</param>
+<param name="user_domain">
+<summary>
+The type of the domain.
+</summary>
+</param>
+<param name="user_role">
+<summary>
+The role associated with the user domain.
+</summary>
+</param>
+</template>
+<template name="ssh_dyntransition_domain_template" lineno="162">
+<summary>
+The template to define a domain to which sshd dyntransition.
+</summary>
+<param name="domain">
+<summary>
+The prefix of the dyntransition domain
+</summary>
+</param>
+</template>
+<template name="ssh_server_template" lineno="195">
+<summary>
+The template to define a ssh server.
+</summary>
+<desc>
+<p>
+This template creates a domains to be used for
+creating a ssh server.  This is typically done
+to have multiple ssh servers of different sensitivities,
+such as for an internal network-facing ssh server, and
+a external network-facing ssh server.
+</p>
+</desc>
+<param name="userdomain_prefix">
+<summary>
+The prefix of the server domain (e.g., sshd
+is the prefix for sshd_t).
+</summary>
+</param>
+</template>
+<template name="ssh_role_template" lineno="327">
+<summary>
+Role access for ssh
+</summary>
+<param name="role_prefix">
+<summary>
+The prefix of the role (e.g., user
+is the prefix for user_r).
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access
+</summary>
+</param>
+<param name="domain">
+<summary>
+User domain for the role
+</summary>
+</param>
+<rolecap/>
+</template>
+<interface name="ssh_sigchld" lineno="424">
+<summary>
+Send a SIGCHLD signal to the ssh server.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_signal" lineno="442">
+<summary>
+Send a generic signal to the ssh server.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_signull" lineno="460">
+<summary>
+Send a null signal to sshd processes.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_read_pipes" lineno="478">
+<summary>
+Read a ssh server unnamed pipe.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_rw_dgram_sockets" lineno="496">
+<summary>
+Read and write ssh server unix dgram sockets.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_rw_pipes" lineno="514">
+<summary>
+Read and write a ssh server unnamed pipe.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_rw_stream_sockets" lineno="532">
+<summary>
+Read and write ssh server unix domain stream sockets.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_rw_tcp_sockets" lineno="550">
+<summary>
+Read and write ssh server TCP sockets.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_dontaudit_rw_tcp_sockets" lineno="569">
+<summary>
+Do not audit attempts to read and write
+ssh server TCP sockets.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="ssh_tcp_connect" lineno="587">
+<summary>
+Connect to SSH daemons over TCP sockets.  (Deprecated)
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_domtrans" lineno="601">
+<summary>
+Execute the ssh daemon sshd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="ssh_initrc_domtrans" lineno="619">
+<summary>
+Execute sshd server in the sshd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_exec" lineno="637">
+<summary>
+Execute the ssh client in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_setattr_key_files" lineno="656">
+<summary>
+Set the attributes of sshd key files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_agent_exec" lineno="675">
+<summary>
+Execute the ssh agent client in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_getattr_user_home_dir" lineno="694">
+<summary>
+Getattr ssh home directory
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_dontaudit_search_user_home_dir" lineno="712">
+<summary>
+Dontaudit search ssh home directory
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="ssh_read_user_home_files" lineno="730">
+<summary>
+Read ssh home directory content
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_domtrans_keygen" lineno="751">
+<summary>
+Execute the ssh key generator in the ssh keygen domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="ssh_exec_keygen" lineno="769">
+<summary>
+Execute the ssh key generator in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="ssh_run_keygen" lineno="794">
+<summary>
+Execute ssh-keygen in the iptables domain, and
+allow the specified role the ssh-keygen domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="ssh_dontaudit_read_server_keys" lineno="813">
+<summary>
+Read ssh server keys
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="ssh_append_home_files" lineno="831">
+<summary>
+Append ssh home directory content
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_manage_home_files" lineno="850">
+<summary>
+Manage ssh home directory content
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_delete_tmp" lineno="869">
+<summary>
+Delete from the ssh temp files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_dyntransition_to" lineno="888">
+<summary>
+Allow domain dyntransition to chroot_user_t domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_filetrans_admin_home_content" lineno="909">
+<summary>
+Create .ssh directory in the /root directory
+with an correct label.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_filetrans_home_content" lineno="929">
+<summary>
+Create .ssh directory in the user home directory
+with an correct label.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_filetrans_keys" lineno="951">
+<summary>
+Create .ssh directory in the user home directory
+with an correct label.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="ssh_dontaudit_use_ptys" lineno="976">
+<summary>
+Do not audit attempts to read and
+write the sshd pty type.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="ssh_use_ptys" lineno="994">
+<summary>
+Read and write inherited sshd pty type.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="ssh_systemctl" lineno="1012">
+<summary>
+Execute sshd server in the sshd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<tunable name="ssh_keysign" dftval="false">
+<desc>
+<p>
+allow host key based authentication
+</p>
+</desc>
+</tunable>
+<tunable name="ssh_sysadm_login" dftval="false">
+<desc>
+<p>
+Allow ssh logins as sysadm_r:sysadm_t
+</p>
+</desc>
+</tunable>
+<tunable name="ssh_chroot_rw_homedirs" dftval="false">
+<desc>
+<p>
+Allow ssh with chroot env to read and write files
+in the user home directories
+</p>
+</desc>
+</tunable>
+</module>
+<module name="xserver" filename="policy/modules/services/xserver.if">
+<summary>X Windows Server</summary>
+<interface name="xserver_restricted_role" lineno="19">
+<summary>
+Rules required for using the X Windows server
+and environment, for restricted users.
+</summary>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dri_domain" lineno="45">
+<summary>
+Domain wants to use direct io devices
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_role" lineno="69">
+<summary>
+Rules required for using the X Windows server
+and environment.
+</summary>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_ro_session" lineno="122">
+<summary>
+Create sessions on the X server, with read-only
+access to the X server shared
+memory segments.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<param name="tmpfs_type">
+<summary>
+The type of the domain SYSV tmpfs files.
+</summary>
+</param>
+</interface>
+<interface name="xserver_rw_session" lineno="162">
+<summary>
+Create sessions on the X server, with read and write
+access to the X server shared
+memory segments.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<param name="tmpfs_type">
+<summary>
+The type of the domain SYSV tmpfs files.
+</summary>
+</param>
+</interface>
+<interface name="xserver_non_drawing_client" lineno="182">
+<summary>
+Create non-drawing client sessions on an X server.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_user_client" lineno="219">
+<summary>
+Create full client sessions
+on a user X server.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<param name="tmpfs_type">
+<summary>
+The type of the domain SYSV tmpfs files.
+</summary>
+</param>
+</interface>
+<template name="xserver_common_x_domain_template" lineno="280">
+<summary>
+Interface to provide X object permissions on a given X server to
+an X client domain.  Provides the minimal set required by a basic
+X client application.
+</summary>
+<param name="prefix">
+<summary>
+The prefix of the X client domain (e.g., user
+is the prefix for user_t).
+</summary>
+</param>
+<param name="domain">
+<summary>
+Client domain allowed access.
+</summary>
+</param>
+</template>
+<template name="xserver_object_types_template" lineno="353">
+<summary>
+Template for creating the set of types used
+in an X windows domain.
+</summary>
+<param name="prefix">
+<summary>
+The prefix of the X client domain (e.g., user
+is the prefix for user_t).
+</summary>
+</param>
+</template>
+<template name="xserver_user_x_domain_template" lineno="395">
+<summary>
+Interface to provide X object permissions on a given X server to
+an X client domain.  Provides the minimal set required by a basic
+X client application.
+</summary>
+<param name="prefix">
+<summary>
+The prefix of the X client domain (e.g., user
+is the prefix for user_t).
+</summary>
+</param>
+<param name="domain">
+<summary>
+Client domain allowed access.
+</summary>
+</param>
+<param name="tmpfs_type">
+<summary>
+The type of the domain SYSV tmpfs files.
+</summary>
+</param>
+</template>
+<interface name="xserver_use_user_fonts" lineno="471">
+<summary>
+Read user fonts, user font configuration,
+and manage the user font cache.
+</summary>
+<desc>
+<p>
+Read user fonts, user font configuration,
+and manage the user font cache.
+</p>
+<p>
+This is a templated interface, and should only
+be called from a per-userdomain template.
+</p>
+</desc>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_domtrans_xauth" lineno="502">
+<summary>
+Transition to the Xauthority domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="xserver_exec_xauth" lineno="520">
+<summary>
+Allow exec of Xauthority program..
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_exec_xauth" lineno="538">
+<summary>
+Dontaudit exec of Xauthority program.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_user_home_dir_filetrans_user_xauth" lineno="556">
+<summary>
+Create a Xauthority file in the user home directory.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_admin_home_dir_filetrans_xauth" lineno="574">
+<summary>
+Create a Xauthority file in the admin home directory.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_use_all_users_fonts" lineno="593">
+<summary>
+Read all users fonts, user font configurations,
+and manage all users font caches.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_user_xauth" lineno="608">
+<summary>
+Read all users .Xauthority.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_manage_user_xauth" lineno="628">
+<summary>
+Manage all users .Xauthority.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_setattr_console_pipes" lineno="646">
+<summary>
+Set the attributes of the X windows console named pipes.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_rw_console" lineno="664">
+<summary>
+Read and write the X windows console named pipe.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_state_xdm" lineno="682">
+<summary>
+Read XDM state files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_use_xdm_fds" lineno="701">
+<summary>
+Use file descriptors for xdm.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_use_xdm_fds" lineno="720">
+<summary>
+Do not audit attempts to inherit
+XDM file descriptors.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_rw_xdm_pipes" lineno="738">
+<summary>
+Read and write XDM unnamed pipes.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_rw_xdm_pipes" lineno="757">
+<summary>
+Do not audit attempts to read and write
+XDM unnamed pipes.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_xdm_state" lineno="775">
+<summary>
+Read xdm process state files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_manage_xdm_spool_files" lineno="797">
+<summary>
+Create, read, write, and delete
+xdm_spool files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_stream_connect_xdm" lineno="817">
+<summary>
+Connect to XDM over a unix domain
+stream socket.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_append_xdm_stream_socket" lineno="840">
+<summary>
+Allow domain to append XDM unix domain
+stream socket.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_xdm_home_files" lineno="858">
+<summary>
+Read XDM files in user home directories.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_config" lineno="877">
+<summary>
+Read xserver configuration files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_manage_config" lineno="897">
+<summary>
+Manage xserver configuration files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_xdm_rw_config" lineno="917">
+<summary>
+Read xdm-writable configuration files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_search_xdm_tmp_dirs" lineno="936">
+<summary>
+Search XDM temporary directories.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_setattr_xdm_tmp_dirs" lineno="951">
+<summary>
+Set the attributes of XDM temporary directories.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_xdm_tmp_dirs" lineno="966">
+<summary>
+Dont audit attempts to set the attributes of XDM temporary directories.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_create_xdm_tmp_sockets" lineno="982">
+<summary>
+Create a named socket in a XDM
+temporary directory.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_xdm_pid" lineno="997">
+<summary>
+Read XDM pid files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_read_xdm_pid" lineno="1016">
+<summary>
+Dontaudit Read XDM pid files.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_xdm_lib_files" lineno="1035">
+<summary>
+Read XDM var lib files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_inherited_xdm_lib_files" lineno="1054">
+<summary>
+Read inherited XDM var lib files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_xsession_entry_type" lineno="1072">
+<summary>
+Make an X session script an entrypoint for the specified domain.
+</summary>
+<param name="domain">
+<summary>
+The domain for which the shell is an entrypoint.
+</summary>
+</param>
+</interface>
+<interface name="xserver_xsession_spec_domtrans" lineno="1109">
+<summary>
+Execute an X session in the target domain.  This
+is an explicit transition, requiring the
+caller to use setexeccon().
+</summary>
+<desc>
+<p>
+Execute an Xsession in the target domain.  This
+is an explicit transition, requiring the
+caller to use setexeccon().
+</p>
+<p>
+No interprocess communication (signals, pipes,
+etc.) is provided by this interface since
+the domains are not owned by this module.
+</p>
+</desc>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="target_domain">
+<summary>
+The type of the shell process.
+</summary>
+</param>
+</interface>
+<interface name="xserver_getattr_log" lineno="1127">
+<summary>
+Get the attributes of X server logs.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_log" lineno="1146">
+<summary>
+Allow domain to read X server logs.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_write_log" lineno="1166">
+<summary>
+Do not audit attempts to write the X server
+log files.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_delete_log" lineno="1184">
+<summary>
+Delete X server log files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_xkb_libs" lineno="1205">
+<summary>
+Read X keyboard extension libraries.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_manage_xkb_libs" lineno="1226">
+<summary>
+Manage X keyboard extension libraries.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_xkb_libs_access" lineno="1246">
+<summary>
+dontaudit access checks X keyboard extension libraries.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_xdm_etc_files" lineno="1265">
+<summary>
+Read xdm config files.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit
+</summary>
+</param>
+</interface>
+<interface name="xserver_manage_xdm_etc_files" lineno="1285">
+<summary>
+Manage xdm config files.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_xdm_tmp_files" lineno="1304">
+<summary>
+Read xdm temporary files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_read_xdm_tmp_files" lineno="1319">
+<summary>
+Do not audit attempts to read xdm temporary files.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_rw_xdm_tmp_files" lineno="1334">
+<summary>
+Read write xdm temporary files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_manage_xdm_tmp_files" lineno="1349">
+<summary>
+Create, read, write, and delete xdm temporary files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_relabel_xdm_tmp_dirs" lineno="1364">
+<summary>
+Create, read, write, and delete xdm temporary dirs.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_manage_xdm_tmp_dirs" lineno="1379">
+<summary>
+Create, read, write, and delete xdm temporary dirs.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_getattr_xdm_tmp_sockets" lineno="1395">
+<summary>
+Do not audit attempts to get the attributes of
+xdm temporary named sockets.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_domtrans" lineno="1410">
+<summary>
+Execute the X server in the X server domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="xserver_signal" lineno="1431">
+<summary>
+Signal X servers
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_kill" lineno="1449">
+<summary>
+Kill X servers
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_rw_shm" lineno="1468">
+<summary>
+Read and write X server Sys V Shared
+memory segments.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_rw_tcp_sockets" lineno="1487">
+<summary>
+Do not audit attempts to read and write to
+X server sockets.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_rw_stream_sockets" lineno="1506">
+<summary>
+Do not audit attempts to read and write X server
+unix domain stream sockets.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_xdm_rw_stream_sockets" lineno="1525">
+<summary>
+Do not audit attempts to read and write xdm
+unix domain stream sockets.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_stream_connect" lineno="1544">
+<summary>
+Connect to the X server over a unix domain
+stream socket.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_stream_connect" lineno="1565">
+<summary>
+Dontaudit attempts to connect to xserver
+over a unix stream socket.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_tmp_files" lineno="1583">
+<summary>
+Read X server temporary files.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_manage_core_devices" lineno="1604">
+<summary>
+Interface to provide X object permissions on a given X server to
+an X client domain.  Gives the domain permission to read the
+virtual core keyboard and virtual core pointer devices.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_unconfined" lineno="1641">
+<summary>
+Interface to provide X object permissions on a given X server to
+an X client domain.  Gives the domain complete control over the
+display.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_append_xdm_home_files" lineno="1660">
+<summary>
+Dontaudit append to .xsession-errors file
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit
+</summary>
+</param>
+</interface>
+<interface name="xserver_append_xdm_home_files" lineno="1686">
+<summary>
+append to .xsession-errors file
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit
+</summary>
+</param>
+</interface>
+<interface name="xserver_xdm_search_spool" lineno="1713">
+<summary>
+Allow search the xdm_spool files
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_xdm_read_spool" lineno="1732">
+<summary>
+Allow read the xdm_spool files
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_xdm_manage_spool" lineno="1751">
+<summary>
+Manage the xdm_spool files
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dbus_chat_xdm" lineno="1771">
+<summary>
+Send and receive messages from
+xdm over dbus.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dbus_chat" lineno="1792">
+<summary>
+Send and receive messages from
+xdm over dbus.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_pid" lineno="1812">
+<summary>
+Read xserver files created in /var/run
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_exec_pid" lineno="1831">
+<summary>
+Execute xserver files created in /var/run
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_write_pid" lineno="1850">
+<summary>
+Write xserver files created in /var/run
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_xdm_append_log" lineno="1870">
+<summary>
+Allow append the xdm
+log files.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit
+</summary>
+</param>
+</interface>
+<interface name="xserver_xdm_ioctl_log" lineno="1890">
+<summary>
+Allow ioctl the xdm log files.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit
+</summary>
+</param>
+</interface>
+<interface name="xserver_append_xdm_tmp_files" lineno="1909">
+<summary>
+Allow append the xdm
+tmp files.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit
+</summary>
+</param>
+</interface>
+<interface name="xserver_read_user_iceauth" lineno="1924">
+<summary>
+Read a user Iceauthority domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_rw_inherited_user_fonts" lineno="1943">
+<summary>
+Read/write inherited user homedir fonts.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_search_xdm_lib" lineno="1964">
+<summary>
+Search XDM var lib dirs.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_entry_type" lineno="1982">
+<summary>
+Make an X executable an entrypoint for the specified domain.
+</summary>
+<param name="domain">
+<summary>
+The domain for which the shell is an entrypoint.
+</summary>
+</param>
+</interface>
+<interface name="xserver_run" lineno="2007">
+<summary>
+Execute xsever in the xserver domain, and
+allow the specified role the xserver domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<param name="role">
+<summary>
+The role to be allowed the xserver domain.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="xserver_run_xauth" lineno="2033">
+<summary>
+Execute xsever in the xserver domain, and
+allow the specified role the xserver domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<param name="role">
+<summary>
+The role to be allowed the xserver domain.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="xserver_read_home_fonts" lineno="2053">
+<summary>
+Read user homedir fonts.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="xserver_manage_user_fonts_dir" lineno="2076">
+<summary>
+Manage user fonts dir.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="xserver_manage_home_fonts" lineno="2096">
+<summary>
+Manage user homedir fonts.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="xserver_filetrans_fonts_cache_home_content" lineno="2122">
+<summary>
+Transition to xserver .fontconfig named content
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_filetrans_home_content" lineno="2140">
+<summary>
+Transition to xserver named content
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_filetrans_admin_home_content" lineno="2193">
+<summary>
+Create xserver content in admin home
+directory with a named file transition.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="xserver_xdm_tmp_filetrans" lineno="2259">
+<summary>
+Create objects in a xdm temporary directory
+with an automatic type transition to
+a specified private type.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<param name="private_type">
+<summary>
+The type of the object to create.
+</summary>
+</param>
+<param name="object_class">
+<summary>
+The class of the object to be created.
+</summary>
+</param>
+<param name="name" optional="true">
+<summary>
+The name of the object being created.
+</summary>
+</param>
+</interface>
+<interface name="xserver_dontaudit_search_log" lineno="2274">
+<summary>
+Dontaudit search ssh home directory
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="xserver_rw_xdm_keys" lineno="2292">
+<summary>
+Manage keys for xdm.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<tunable name="xserver_clients_write_xshm" dftval="false">
+<desc>
+<p>
+Allows clients to write to the X server shared
+memory segments.
+</p>
+</desc>
+</tunable>
+<tunable name="xserver_execmem" dftval="false">
+<desc>
+<p>
+Allows XServer to execute writable memory
+</p>
+</desc>
+</tunable>
+<tunable name="xdm_exec_bootloader" dftval="false">
+<desc>
+<p>
+Allow the graphical login program to execute bootloader
+</p>
+</desc>
+</tunable>
+<tunable name="xdm_sysadm_login" dftval="false">
+<desc>
+<p>
+Allow the graphical login program to login directly as sysadm_r:sysadm_t
+</p>
+</desc>
+</tunable>
+<tunable name="xdm_write_home" dftval="false">
+<desc>
+<p>
+Allow the graphical login program to create files in HOME dirs as xdm_home_t.
+</p>
+</desc>
+</tunable>
+<tunable name="xserver_object_manager" dftval="false">
+<desc>
+<p>
+Support X userspace object manager
+</p>
+</desc>
+</tunable>
+<tunable name="selinuxuser_direct_dri_enabled" dftval="false">
+<desc>
+<p>
+Allow regular users direct dri device access
+</p>
+</desc>
+</tunable>
+</module>

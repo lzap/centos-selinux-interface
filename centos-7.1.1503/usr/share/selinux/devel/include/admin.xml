@@ -1,0 +1,692 @@
+<summary>
+	Policy modules for administrative functions, such as package management.
+</summary>
+<module name="bootloader" filename="policy/modules/admin/bootloader.if">
+<summary>Policy for the kernel modules, kernel image, and bootloader.</summary>
+<interface name="bootloader_domtrans" lineno="13">
+<summary>
+Execute bootloader in the bootloader domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="bootloader_exec" lineno="32">
+<summary>
+Execute bootloader in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="bootloader_run" lineno="57">
+<summary>
+Execute bootloader interactively and do
+a domain transition to the bootloader domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="bootloader_read_config" lineno="78">
+<summary>
+Read the bootloader configuration file.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="bootloader_rw_config" lineno="98">
+<summary>
+Read and write the bootloader
+configuration file.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="bootloader_manage_config" lineno="118">
+<summary>
+Manage the bootloader
+configuration file.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="bootloader_rw_tmp_files" lineno="137">
+<summary>
+Read and write the bootloader
+temporary data in /tmp.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="bootloader_create_runtime_file" lineno="157">
+<summary>
+Read and write the bootloader
+temporary data in /tmp.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="bootloader_filetrans_config" lineno="176">
+<summary>
+Type transition files created in /etc
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+</module>
+<module name="consoletype" filename="policy/modules/admin/consoletype.if">
+<summary>
+Determine of the console connected to the controlling terminal.
+</summary>
+<interface name="consoletype_domtrans" lineno="15">
+<summary>
+Execute consoletype in the consoletype domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="consoletype_run" lineno="40">
+<summary>
+Execute consoletype in the consoletype domain, and
+allow the specified role the consoletype domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+</interface>
+<interface name="consoletype_exec" lineno="60">
+<summary>
+Execute consoletype in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+</module>
+<module name="dmesg" filename="policy/modules/admin/dmesg.if">
+<summary>Policy for dmesg.</summary>
+<interface name="dmesg_domtrans" lineno="13">
+<summary>
+Execute dmesg in the dmesg domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="dmesg_exec" lineno="33">
+<summary>
+Execute dmesg in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+</module>
+<module name="netutils" filename="policy/modules/admin/netutils.if">
+<summary>Network analysis utilities</summary>
+<interface name="netutils_domtrans" lineno="13">
+<summary>
+Execute network utilities in the netutils domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="netutils_run" lineno="39">
+<summary>
+Execute network utilities in the netutils domain, and
+allow the specified role the netutils domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="netutils_exec" lineno="59">
+<summary>
+Execute network utilities in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="netutils_signal" lineno="78">
+<summary>
+Send generic signals to network utilities.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="netutils_domtrans_ping" lineno="96">
+<summary>
+Execute ping in the ping domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="netutils_kill_ping" lineno="115">
+<summary>
+Send a kill (SIGKILL) signal to ping.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="netutils_signal_ping" lineno="133">
+<summary>
+Send generic signals to ping.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="netutils_run_ping" lineno="158">
+<summary>
+Execute ping in the ping domain, and
+allow the specified role the ping domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="netutils_run_ping_cond" lineno="185">
+<summary>
+Conditionally execute ping in the ping domain, and
+allow the specified role the ping domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="netutils_exec_ping" lineno="209">
+<summary>
+Execute ping in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="netutils_domtrans_traceroute" lineno="228">
+<summary>
+Execute traceroute in the traceroute domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="netutils_run_traceroute" lineno="254">
+<summary>
+Execute traceroute in the traceroute domain, and
+allow the specified role the traceroute domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="netutils_run_traceroute_cond" lineno="281">
+<summary>
+Conditionally execute traceroute in the traceroute domain, and
+allow the specified role the traceroute domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="netutils_exec_traceroute" lineno="305">
+<summary>
+Execute traceroute in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<tunable name="selinuxuser_ping" dftval="false">
+<desc>
+<p>
+Allow confined users the ability to execute the ping and traceroute commands.
+</p>
+</desc>
+</tunable>
+</module>
+<module name="su" filename="policy/modules/admin/su.if">
+<summary>Run shells with substitute user and group</summary>
+<template name="su_restricted_domain_template" lineno="31">
+<summary>
+Restricted su domain template.
+</summary>
+<desc>
+<p>
+This template creates a derived domain which is allowed
+to change the linux user id, to run shells as a different
+user.
+</p>
+</desc>
+<param name="userdomain_prefix">
+<summary>
+The prefix of the user domain (e.g., user
+is the prefix for user_t).
+</summary>
+</param>
+<param name="user_domain">
+<summary>
+The type of the user domain.
+</summary>
+</param>
+<param name="user_role">
+<summary>
+The role associated with the user domain.
+</summary>
+</param>
+</template>
+<template name="su_role_template" lineno="158">
+<summary>
+The role template for the su module.
+</summary>
+<param name="role_prefix">
+<summary>
+The prefix of the user role (e.g., user
+is the prefix for user_r).
+</summary>
+</param>
+<param name="user_role">
+<summary>
+The role associated with the user domain.
+</summary>
+</param>
+<param name="user_domain">
+<summary>
+The type of the user domain.
+</summary>
+</param>
+</template>
+<interface name="su_exec" lineno="203">
+<summary>
+Execute su in the caller domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+</module>
+<module name="sudo" filename="policy/modules/admin/sudo.if">
+<summary>Execute a command with a substitute user</summary>
+<template name="sudo_role_template" lineno="31">
+<summary>
+The role template for the sudo module.
+</summary>
+<desc>
+<p>
+This template creates a derived domain which is allowed
+to change the linux user id, to run commands as a different
+user.
+</p>
+</desc>
+<param name="role_prefix">
+<summary>
+The prefix of the user role (e.g., user
+is the prefix for user_r).
+</summary>
+</param>
+<param name="user_role">
+<summary>
+The user role.
+</summary>
+</param>
+<param name="user_domain">
+<summary>
+The user domain associated with the role.
+</summary>
+</param>
+</template>
+<interface name="sudo_sigchld" lineno="103">
+<summary>
+Send a SIGCHLD signal to the sudo domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="sudo_exec" lineno="122">
+<summary>
+Allow execute sudo in called domain.
+This interfaces is added for nova-stack policy.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+</module>
+<module name="usermanage" filename="policy/modules/admin/usermanage.if">
+<summary>Policy for managing user accounts.</summary>
+<interface name="usermanage_domtrans_chfn" lineno="13">
+<summary>
+Execute chfn in the chfn domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_run_chfn" lineno="38">
+<summary>
+Execute chfn in the chfn domain, and
+allow the specified role the chfn domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_domtrans_groupadd" lineno="58">
+<summary>
+Execute groupadd in the groupadd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_access_check_groupadd" lineno="77">
+<summary>
+Check access to the groupadd executable.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_run_groupadd" lineno="103">
+<summary>
+Execute groupadd in the groupadd domain, and
+allow the specified role the groupadd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="usermanage_domtrans_passwd" lineno="123">
+<summary>
+Execute passwd in the passwd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_kill_passwd" lineno="142">
+<summary>
+Send sigkills to passwd.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_check_exec_passwd" lineno="160">
+<summary>
+Check if the passwd binary is executable.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_run_passwd" lineno="184">
+<summary>
+Execute passwd in the passwd domain, and
+allow the specified role the passwd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_access_check_passwd" lineno="204">
+<summary>
+Check access to the passwd executable
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_domtrans_admin_passwd" lineno="224">
+<summary>
+Execute password admin functions in
+the admin passwd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_run_admin_passwd" lineno="251">
+<summary>
+Execute passwd admin functions in the admin
+passwd domain, and allow the specified role
+the admin passwd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="usermanage_dontaudit_use_useradd_fds" lineno="271">
+<summary>
+Do not audit attempts to use useradd fds.
+</summary>
+<param name="domain">
+<summary>
+Domain to not audit.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_domtrans_useradd" lineno="289">
+<summary>
+Execute useradd in the useradd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_check_exec_useradd" lineno="308">
+<summary>
+Check if the useradd binaries are executable.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_run_useradd" lineno="333">
+<summary>
+Execute useradd in the useradd domain, and
+allow the specified role the useradd domain.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed to transition.
+</summary>
+</param>
+<param name="role">
+<summary>
+Role allowed access.
+</summary>
+</param>
+<rolecap/>
+</interface>
+<interface name="usermanage_access_check_useradd" lineno="353">
+<summary>
+Check access to the useradd executable.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+<interface name="usermanage_read_crack_db" lineno="372">
+<summary>
+Read the crack database.
+</summary>
+<param name="domain">
+<summary>
+Domain allowed access.
+</summary>
+</param>
+</interface>
+</module>

@@ -1,0 +1,119 @@
+## <summary> Standards Based Linux Instrumentation for Manageability. </summary>
+
+######################################
+## <summary>
+##  Creates types and rules for a basic
+##  sblim daemon domain.
+## </summary>
+## <param name="prefix">
+##  <summary>
+##  Prefix for the domain.
+##  </summary>
+## </param>
+#
+template(`sblim_domain_template',`
+    gen_require(`
+        attribute sblim_domain;
+    ')
+
+    type sblim_$1_t, sblim_domain;
+    type sblim_$1_exec_t;
+    init_daemon_domain(sblim_$1_t, sblim_$1_exec_t)
+
+	kernel_read_system_state(sblim_$1_t)
+
+	corenet_all_recvfrom_unlabeled(sblim_$1_t)
+	corenet_all_recvfrom_netlabel(sblim_$1_t)
+
+	logging_send_syslog_msg(sblim_$1_t)
+')
+
+########################################
+## <summary>
+##	Transition to gatherd.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to transition.
+##	</summary>
+## </param>
+#
+interface(`sblim_domtrans_gatherd',`
+	gen_require(`
+		type sblim_gatherd_t, sblim_gatherd_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	domtrans_pattern($1, sblim_gatherd_exec_t, sblim_gatherd_t)
+')
+
+########################################
+## <summary>
+##	Read gatherd PID files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`sblim_read_pid_files',`
+	gen_require(`
+		type sblim_var_run_t;
+	')
+
+	files_search_pids($1)
+	allow $1 sblim_var_run_t:file read_file_perms;
+')
+
+########################################
+## <summary>
+##	Transition to sblim named content
+## </summary>
+## <param name="domain">
+##	<summary>
+##      Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`sblim_filetrans_named_content',`
+	gen_require(`
+		type sblim_var_run_t;
+	')
+
+	files_pid_filetrans($1, sblim_var_run_t, dir, "gather")
+')
+
+########################################
+## <summary>
+##	All of the rules required to administrate
+##	an gatherd environment
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`sblim_admin',`
+	gen_require(`
+		type sblim_gatherd_t;
+		type sblim_reposd_t;
+		type sblim_var_run_t;
+	')
+
+	allow $1 sblim_gatherd_t:process signal_perms;
+	ps_process_pattern($1, sblim_gatherd_t)
+
+	tunable_policy(`deny_ptrace',`',`
+		allow $1 sblim_gatherd_t:process ptrace;
+		allow $1 sblim_reposd_t:process ptrace;
+	')
+
+	allow $1 sblim_reposd_t:process signal_perms;
+	ps_process_pattern($1, sblim_reposd_t)
+
+	files_search_pids($1)
+	admin_pattern($1, sblim_var_run_t)
+')

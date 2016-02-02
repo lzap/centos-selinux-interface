@@ -2,10 +2,15 @@ CentOS SELinux Policy differences
 ---------------------------------
 
 This repo contains SELinux base policy interfaces which are extracted from
-selinux-policy-devel packages in CentOS. Use github branch comparison to see
-differences between branches or plain git:
+selinux-policy-devel packages in CentOS. This git repository can be used to
+show differences among releases or updates. To see the differences, use git:
 
     git diff centos-7.1.1503 centos-7.2.1511
+
+Unfortunately, github cannot be used as it always diffs against base branch.
+I created gists with the most interesting differences:
+
+    * CentOS 7.1 vs 7.2: https://gist.github.com/lzap/9a3ae1e02a9cbdf6fb26
 
 Contributing
 ------------

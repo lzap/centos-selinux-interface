@@ -28,6 +28,10 @@ To push new update or release, find the RPM package
     rpm2cpio selinux-policy-devel-*.rpm | cpio -idmv
     git add -A
     git commit "Added selinux-policy-devel-XYZ.noarch.rpm"
-    git push
+
+Then create the diff file filtering out unnecessary elements:
+
+    git checkout master
+    git diff b1 b2 | filterdiff README.md *.diff > distro-X-vs-Y.diff
 
 And file a Pull Request for this repo, thanks!

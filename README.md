@@ -10,7 +10,7 @@ show differences among releases or updates. To see the differences, use git:
 Unfortunately, github cannot be used as it always diffs against base branch.
 I created gists with the most interesting differences:
 
-    * CentOS 7.1 vs 7.2: https://gist.github.com/lzap/9a3ae1e02a9cbdf6fb26
+* CentOS 7.1 vs 7.2: https://gist.github.com/lzap/9a3ae1e02a9cbdf6fb26
 
 Contributing
 ------------
